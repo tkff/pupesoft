@@ -66,13 +66,26 @@
 
 	if (!$php_cli) {
 
+		echo " 	<!-- Enabloidaan shiftill‰ checkboxien chekkaus //-->
+				<script src='../inc/checkboxrange.js'></script>
+
+				<script language='javascript' type='text/javascript'>
+					$(document).ready(function(){
+						$(\".shift\").shiftcheckbox();
+					});
+				</script>";
+
+
+		if (isset($supertee) and $supertee == "RAPORTOI" and !isset($laske_varastonarvot)) {
+			$supertee = "";
+		}
+
 		echo "<font class='head'>".t("Varastonarvo tuotteittain")."</font><hr>";
 
 		// piirrell‰‰n formi
 		echo "<form name='formi' method='post' autocomplete='OFF'>";
 		echo "<input type='hidden' name='supertee' value='RAPORTOI'>";
 
-		$noautosubmit = TRUE;
 		$monivalintalaatikot = array("OSASTO", "TRY", "TUOTEMERKKI");
 		require ("tilauskasittely/monivalintalaatikot.inc");
 
@@ -201,9 +214,9 @@
 
 		echo "<td>
 				<select name='summaustaso'>
-				<option value='T'   $sel3>".t("Varastonarvo tuotteittain")."</option>
 				<option value='S'   $sel1>".t("Varastonarvo varastoittain/tuotteittain")."</option>
 				<option value='P'   $sel2>".t("Varastonarvo varastopaikoittain")."</option>
+				<option value='T'   $sel3>".t("Varastonarvo tuotteittain")."</option>
 				<option value='TRY' $sel4>".t("Varastonarvo tuoteryhmitt‰in")."</option>
 				</select>";
 
@@ -237,9 +250,14 @@
 
 		echo "</select></td></tr>";
 
+		if($piilotetut_varastot != 'on') {
+			$piilotetut_varastot_where = ' AND tyyppi != "P"';
+		}
+
 		$query  = "	SELECT tunnus, nimitys
 					FROM varastopaikat
 					WHERE yhtio = '$kukarow[yhtio]'
+					{$piilotetut_varastot_where}
 					ORDER BY tyyppi, nimitys";
 		$vares = pupe_query($query);
 
@@ -255,9 +273,18 @@
 				$sel = 'checked';
 			}
 
-			echo "<input type='checkbox' name='varastot[]' value='{$varow['tunnus']}' $sel/>{$varow['nimitys']}<br />\n";
+			echo "<input type='checkbox' name='varastot[]' class='shift' value='{$varow['tunnus']}' $sel/>{$varow['nimitys']}<br />\n";
 		}
 
+
+		if ($piilotetut_varastot == 'on') {
+			$piilotetut_select = "checked";
+		}
+		else {
+			$piilotetut_select = "";
+		}
+
+		echo "<br><input type='checkbox' {$piilotetut_select} name='piilotetut_varastot' onclick='submit();' /> ".t('N‰yt‰ poistetut varastot');
 		echo "</td><td class='back' valign='top'>".t('Saat kaikki varastot jos et valitse mit‰‰n').".</td></tr>";
 
 		echo "<tr>";
@@ -280,7 +307,7 @@
 		echo "</table>";
 		echo "<br>";
 
-		echo "<input type='submit' value='Laske varastonarvot'>";
+		echo "<input type='submit' name='laske_varastonarvot' value='".t("Laske varastonarvot")."'>";
 		echo "</form><br><br>";
 	}
 
@@ -1356,10 +1383,13 @@
 				echo "<font class='error'>",t("Huom. Bruttovarastonarvo historiasta on arvio"),"!</font><br/>";
 
 				if (count($varastot) > 0) {
-					echo "<font class='error'>",t("Huom. Varastonarvo historiasta on arvio, jos rajaat raporttia varastoittain."),"</font><br/>";
+					echo "<font class='error'>",t("Huom. Varastonarvo historiassa on arvio, jos rajaat raporttia varastoittain.")," ",t("Aja raportti ilman varastorajauksia."),"</font><br/>";
 				}
-				if ($summaustaso != "T") {
-					echo "<font class='error'>",t("Huom. Varastonarvo historiasta on arvio, jos summaustaso ei ole tuotteittain."),"</font><br/>";
+				elseif ($summaustaso == "S") {
+					echo "<font class='error'>",t("Huom. Varastonarvo yhteens‰ on oikein, mutta varastokohtainen varastonarvo historiasta on arvio.")," ",t("Aja raportti tuotteittain/tuoteryhmitt‰in."),"</font><br/>";
+				}
+				elseif ($summaustaso == "P") {
+					echo "<font class='error'>",t("Huom. Varastonarvo yhteens‰ on oikein, mutta varastopaikkakohtainen varastonarvo historiasta on arvio.")," ",t("Aja raportti tuotteittain/tuoteryhmitt‰in."),"</font><br/>";
 				}
 
 				echo "<br/>";
