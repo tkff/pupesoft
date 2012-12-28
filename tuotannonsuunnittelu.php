@@ -1,90 +1,34 @@
 <?php
+
 require 'inc/parametrit.inc';
+
 require 'valmistuslinjat.inc';
-// require "inc/connect.inc";
-// require "inc/functions.inc";
+require 'valmistus.class.php';
+
 
 echo "<link rel='stylesheet' type='text/css' href='fullcalendar.css' />
+	<link rel='stylesheet' type='text/css' href='valmistuslinjat.css' />
 	<script type='text/javascript' src='fullcalendar.js'></script>
 	<script type='text/javascript' src='valmistuslinjat.js'></script>";
 
-echo "<style type='text/css'>
-a {
-	text-decoration: none;
-}
 
-.controls {
-	width: 100%;
-	height: 23px
-}
+// Valmistuslinjojen info popup
+echo "<div id='bubble'>";
+echo "<div id='header'></div>";
+echo "<div id='content'></div>";
+echo "<form action='tuotannonsuunnittelu.php?method=update' method='post' id='toiminto'>
+		<input type='hidden' name='tunnus' id='valmistuksen_tunnus'>
+		<select name='tila' onchange='submit()'>
+		<option value=''>Valitse</option>
+		<option value='OV'>Siir‰ parkkiin</option>
+		<option value='VA'>Aloita valmistus</option>
+		<option value='TK'>Keskeyt‰ valmistus</option>
+		<option value='VT'>Valmis tarkistukseen</option>
+		</select>
+	</form>";
+echo "</div>";
 
-.vasemmalle {
-	position:relative;
-	top: 6px;
-	padding-right: 5px;
-	float: left;
-}
-.oikealle {
-	position:relative;
-	position:relative;
-	top: 6px;
-	float: right;
-}
-
-.form {
-	width: 100%;
-	text-align: center;
-}
-
-.fc-event-inner {
-	text-align: center;
-}
-
-
-.fc-event-title {
-	float:left;
-	text-align: center;
-	width: 100%;
-}
-
-.fc-resourceName {
-	text-align: center;
-	font-size: 10pt;
-}
-
-.fc-event-prev {
-	float: left;
-}
-.fc-event-next {
-	float: right;
-}
-
-#bubble {
-	display:none;
-	position: fixed;
-	color: black;
-	background-color: #FFF;
-	z-index: 99;
-
-	padding: 10px;
-	border: solid 1px;
-	border-color: #AAA;
-	border-radius: 10px;
-
-	text-align: center;
-}
-
-#info {
-	font-weight: bold;
-	margin: 2px;
-}
-
-#content {
-	padding: 3px;
-}
-</style>";
-
-
+// html
 echo "<font class='head'>".t("Tyˆjono tyˆsuunnittelu")."</font><hr>";
 
 echo "<input type='hidden' id='yhtiorow' value='{$kukarow['yhtio']}'>";
@@ -96,6 +40,7 @@ echo "<br>";
 
 if (!isset($tee)) $tee = '';
 
+// Debug
 if (isset($laske_kestot_uudelleen) and $laske_kestot_uudelleen == true) {
 	rebuild_valmistuslinjat();
 }
@@ -104,11 +49,12 @@ if (isset($laske_kestot_uudelleen) and $laske_kestot_uudelleen == true) {
 if (isset($method) and $method == 'move') {
 
 	// Haetaan valitun valmistuksen tiedot
-	$query = "SELECT *, kalenteri.tunnus as tunnus
+	$query = "SELECT *, lasku.tunnus
 				FROM kalenteri
 				JOIN lasku on (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
-				WHERE kalenteri.yhtio='{$kukarow['yhtio']}' AND kalenteri.tunnus='{$tunnus}'";
+				WHERE kalenteri.yhtio='{$kukarow['yhtio']}' AND kalenteri.otunnus='{$tunnus}'";
 	$result = pupe_query($query);
+	echo $query;
 	$valittu_valmistus = mysql_fetch_assoc($result);
 
 	// Siiret‰‰n aiemmaksi
@@ -138,8 +84,9 @@ if (isset($method) and $method == 'update') {
 	$query = "SELECT *, kalenteri.tunnus as tunnus
 				FROM kalenteri
 				JOIN lasku on (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
+				JOIN tilausrivi on (lasku.yhtio=tilausrivi.yhtio AND lasku.tunnus=tilausrivi.otunnus and tilausrivi.tyyppi='W')
 				WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
-				AND kalenteri.tunnus='{$tunnus}'";
+				AND kalenteri.otunnus='{$tunnus}'";
 	$result = pupe_query($query);
 	$valittu_valmistus = mysql_fetch_assoc($result);
 
@@ -168,7 +115,7 @@ if (isset($method) and $method == 'update') {
 						WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
 						AND kalenteri.henkilo='{$valittu_valmistus['henkilo']}'
 						AND valmistuksen_tila='VA'";
-			$result = pupe_query($query);
+			#$result = pupe_query($query);
 
 			// Jos linjalla on joku muu tyˆ valmistuksessa
 			if (mysql_num_rows($result) > 0) {
@@ -176,7 +123,6 @@ if (isset($method) and $method == 'update') {
 			}
 			else {
 				// Aloitetaan tyˆ puolentunnin tarkkuudella
-				// TODO: Alkuajan tulisi alkaa seuraavana vapaana tyˆaikana
 				// (esim. klo 15:00 -> seuraava aamu klo 07:00)
 				$pvmalku = round_time(strtotime('now'));
 				$kesto = valmistuksen_kesto($valittu_valmistus['otunnus']);
@@ -189,32 +135,32 @@ if (isset($method) and $method == 'update') {
 				$query = "UPDATE kalenteri
 							SET pvmalku='{$pvmalku}', pvmloppu='{$pvmloppu}'
 							WHERE tunnus='{$valittu_valmistus['tunnus']}'";
-				pupe_query($query);
+				#pupe_query($query);
 
 				// P‰ivitet‰‰n valmistuksen tila
 				$query = "UPDATE lasku
 							SET valmistuksen_tila='{$tila}'
 							WHERE tunnus='{$valittu_valmistus['otunnus']}'";
-				pupe_query($query);
+				#pupe_query($query);
 
 				$valittu_valmistus['pvmalku'] = $pvmalku;
 				$valittu_valmistus['pvmloppu'] = $pvmloppu;
 
 				// Uudelleenlasketaan kestot
-				rebuild_valmistuslinjat();
+				#rebuild_valmistuslinjat();
 			}
 
 			break;
 		case 'TK':
 			echo "keskeytetty";
 			$query = "UPDATE lasku SET valmistuksen_tila='TK' WHERE tunnus='{$valittu_valmistus['otunnus']}'";
-			pupe_query($query);
+			#pupe_query($query);
 
 			break;
 		case 'VT':
 			echo "valmis tarkastukseen";
 			$query = "UPDATE lasku SET valmistuksen_tila='VT' WHERE tunnus='{$valittu_valmistus['otunnus']}'";
-			pupe_query($query);
+			#pupe_query($query);
 
 			break;
 		default:
@@ -226,121 +172,8 @@ if (isset($method) and $method == 'update') {
 /** Lis‰t‰‰n valmistus valmistusjonoon
 */
 if ($tee == 'lisaa_tyojonoon') {
-
 	echo "Lis‰t‰‰n valmistus $valmistus valmistusjonoon '$valmistuslinja'<br>";
-
-	// Haetaan valmistuksen tiedot
-	$query = "SELECT varattu
-				FROM tilausrivi
-				WHERE yhtio='{$kukarow['yhtio']}'
-				AND otunnus=$valmistus
-				AND tyyppi='W'";
-	$result = pupe_query($query);
-	$valmistettava = mysql_fetch_assoc($result);
-
-	// Tarkistetaan edellisen valmistuksen loppupvm
-	$query = "SELECT *
-				FROM kalenteri
-				WHERE yhtio='{$kukarow['yhtio']}'
-				AND tyyppi='valmistus'
-				AND henkilo='{$valmistuslinja}'
-				ORDER BY pvmloppu desc LIMIT 1";
-	echo $query."<br>";
-
-	$result = pupe_query($query);
-	$edellinen_valmistus = mysql_fetch_assoc($result);
-
-	// Linjalla ei ole valmistuksia, lis‰t‰‰n uusi valmistus t‰st‰ hetkest‰ l‰htien
-	if ($edellinen_valmistus['pvmloppu'] != '') {
-		echo "viimeisin valmistus p‰‰ttyy: $edellinen_valmistus[pvmloppu]<br>";
-		$pvmalku = strtotime($edellinen_valmistus['pvmloppu']);
-
-		// TODO: hajoo perjantaisin
-		if (date('H', $pvmalku) == 15) {
-			$pvmalku = mktime(7, 0, 0, date('m', $pvmalku), date('d', $pvmalku)+1, date('Y', $pvmalku));
-		}
-	}
-	else {
-		// Etit‰‰n seuraava sopiva paikka, esim. seuraava aamu jos yritet‰‰ lis‰t‰ tyˆajalla
-		$pvmalku = round_time(strtotime('now'));
-
-		echo "etit‰‰n sopiva aloitusaika<br>";
-
-		$day_of_week = date('w', $pvmalku);
-		$day = date('d', $pvmalku);
-		echo "day: $day<br>";
-		$hour = date('H', $pvmalku);
-
-
-		// lauantai -> maanantai
-		if ($day_of_week == 6) {
-			echo "lauantai<br>";
-			$day += 2;
-			$hour = 7;
-		}
-		// sunnuntai -> maanantai
-		elseif ($day_of_week == 0) {
-			echo "sunnuntai<br>";
-			$day += 1;
-			$hour = 7;
-		}
-
-		// Jos ollaan tyˆp‰iv‰n ohi
-		elseif($hour > 15 and $hour <= 23) {
-			// Perjantai-iltap‰iv‰ -> maanantai
-			if ($day_of_week == 5) {
-				$day += 3;
-				$hour = 7;
-			}
-			$day += 1;
-			$hour = 7;
-		}
-		// Jos ollaan aamuyˆss‰
-		elseif($hour >= 0 and $hour < 7) {
-			// Tunnit aamuun
-			$hour = 7;
-		}
-
-		echo "day: $day<br>";
-		// Luodaan uusi alkupvm
-		$pvmalku = mktime($hour, date('i', $pvmalku), 0, date('m', $pvmalku), $day, date('Y', $pvmalku));
-	}
-
-	$debug[] = "valmistus alkaa: ".date('Y-m-d H:i:s', $pvmalku)."<br>";
-
-	// Lasketaan valmistukseen kuluva aika
-	$valmistukseen_kuluva_aika = valmistuksen_kesto($valmistus);
-	$debug[] = "Lis‰tty valmistus kest‰‰ n. ".$valmistukseen_kuluva_aika. " tuntia <br>";
-
-	$loppuaika = laske_loppuaika($pvmalku, $valmistukseen_kuluva_aika*60);
-
-	$pvmalku = date('Y-m-d H:i:s', $pvmalku);
-	$pvmloppu = date('Y-m-d H:i:s', $loppuaika);
-	$debug[] = "valmistus loppuu: ".$pvmloppu."<br>";
-
-	// Lis‰t‰‰n valmistus kalenteriin
-	$query = "INSERT INTO kalenteri SET
-				yhtio		= '$kukarow[yhtio]',
-				kuka 		= '$kukarow[kuka]',
-				henkilo		= '$_POST[valmistuslinja]',
-				pvmalku 	= '$pvmalku',
-				pvmloppu 	= '$pvmloppu',
-				tyyppi		= 'valmistus',
-				otunnus		= '$_POST[valmistus]'";
-	$debug[] = $query;
-
-	$result = pupe_query($query);
-
-	// DEBUGGIA
-	$alkupvm = new DateTime();
-
-	$kesto_paivissa = round(valmistuksen_kesto($valmistus) / 8);
-
-	$loppupvm = new DateTime();
-	$loppupvm->add(new DateInterval("P".$kesto_paivissa."D"));
-
-	$debug[] = "<br>alkupvm: ".$alkupvm->format('d.m.Y H:i');
-	$debug[] = "<br>loppupvm: ".$loppupvm->format('d.m.Y H:i');
+	lisaa_valmistus($valmistus, $valmistuslinja);
 }
 
 /** P‰ivitet‰‰n valmistuksen tila
@@ -361,34 +194,6 @@ if ($tee == 'paivita_tila') {
 
 	// Valmista tarkastukseen
 	if ($tila == 'VT') {
-
-		echo "<div class='info'>
-			<h3>Valmista tarkastukseen</h3>
-			<form method='post'>
-				<table>
-				<tr>
-					<th>Valmistus</th>
-					<td>{$valmistus['tunnus']} {$valmistus['varattu']} {$valmistus['yksikko']}</td>
-				</tr>
-				<tr>
-					<th>Valmistettava m‰‰r‰</th>
-					<td><input type='text' value='{$valmistus['varattu']}'></td>
-				</tr>
-				<tr>
-					<th>Ylityˆtunnit</th>
-					<td><input type='text'></td>
-				</tr>
-				<tr>
-					<th>Kommentit</th>
-					<td><input type='text'></td>
-				</tr>
-				<tr>
-					<td></td>
-					<td align='right'><input type='submit' value='Valmis'></td>
-				</tr>
-				</table>
-			</form>
-		</div>";
 
 	}
 	// Keskeyt‰ tyˆ
@@ -421,7 +226,6 @@ if ($tee == 'paivita_tila') {
 				</table>
 			</form>
 		</div>";
-
 	}
 	// Valmistukseen ( Muita valmistuksia voi joutua siirtelem‰‰n )
 	elseif ($tila == 'VA') {
@@ -483,7 +287,6 @@ if ($tee == 'paivita_tila') {
 		// Poistetaan kalenterista
 		$query = "DELETE FROM kalenteri WHERE tunnus='{$valmistus['tunnus']}'";
 		pupe_query($query);
-		$debug[] = $query;
 
 		uudelleenlaske_kestot($valmistus['kuka']);
 	}
@@ -501,8 +304,6 @@ if ($tee == 'paivita_tila') {
 
 if ($tee == 'lisaa_kalenteriin') {
 	echo "lis‰t‰‰n kalenteriin<br>";
-
-	// TODO: tarkista syˆtetyt p‰iv‰m‰‰r‰t
 
 	if (!empty($pvmloppu)) $pvmloppu = strtotime($pvmloppu);
 
@@ -540,29 +341,8 @@ echo "<br>";
 echo "<font class='head'>".t("Parkki")."</font>";
 echo "<hr>";
 
-echo "aika : ". date('Y-m-d H:i:s', round_time(strtotime('now')));
-
-// Haetaan valmistuslinjat
-$query = "SELECT * FROM avainsana WHERE yhtio='{$kukarow['yhtio']}' AND laji='valmistuslinja' ORDER BY selite";
-$result = pupe_query($query);
-
-$valmistuslinjat = array();
-
-while($linja = mysql_fetch_assoc($result)) {
-	$linjat[] = $linja;
-}
-
-// Haetaan valmistukset parkissa olevat valmistukset (OV ja mitk‰ eiv‰t ole jo kalenterissa)
-$query = "SELECT lasku.tunnus, tilausrivi.tuoteno, tilausrivi.nimitys, tilausrivi.varattu, tilausrivi.yksikko, lasku.valmistuksen_tila, kalenteri.pvmalku
-			FROM lasku
-			JOIN tilausrivi on (tilausrivi.yhtio=lasku.yhtio AND tilausrivi.otunnus=lasku.tunnus)
-			LEFT JOIN kalenteri on (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
-			WHERE lasku.yhtio='{$kukarow['yhtio']}'
-			AND tila='V'
-			AND tilausrivi.tyyppi='W'
-			AND alatila in ('','A','B','J')
-			AND pvmalku IS NULL";
-$result = pupe_query($query);
+// Hetaan valmistuslinjat avainsanoista
+$linjat = hae_valmistuslinjat();
 
 echo "<table border=1>";
 echo "<tr>";
@@ -571,50 +351,57 @@ echo "<th>Nimitys</th>";
 echo "<th>M‰‰r‰</th>";
 echo "<th>Kesto (h)</th>";
 echo "<th></th>";
+echo "<th>Puutteet</th>";
 echo "</tr>";
 
-while ($valmistus = mysql_fetch_assoc($result)) {
+$valmistukset = Valmistus::all();
 
+//Listataan parkissa olevat valmistukset
+foreach($valmistukset as $valmistus) {
 	echo "<tr>";
-	echo "<td>{$valmistus['valmistuksen_tila']}</td>";
-	echo "<td>{$valmistus['tunnus']} {$valmistus['nimitys']}</td>";
-	echo "<td>{$valmistus['varattu']} {$valmistus['yksikko']}</td>";
-	echo "<td>" . valmistuksen_kesto($valmistus['tunnus'])."</td>";
-	echo "</td>";
 
-	echo "<form method='POST'>";
+	echo "<td>" . $valmistus->tunnus() . "</td>";
+
 	echo "<td>";
-	echo "<input type='hidden' name='tee' value='lisaa_tyojonoon'>";
-	echo "<input type='hidden' name='valmistus' value='$valmistus[tunnus]'>";
-
-	echo "<select name='valmistuslinja'>";
-	echo "<option value=''>Valitse linja</option>";
-
-	foreach($linjat as $linja) {
-		echo "<option value='$linja[selite]'>$linja[selitetark]</option>";
+	// Valmistuksella olevat tuotteet
+	$kpl = '';
+	foreach($valmistus->tuotteet() as $tuote) {
+		echo $tuote['tuoteno'] . " "
+			. $tuote['nimitys'] . "<br>";
+		$kpl .= $tuote['varattu'] . " " . $tuote['yksikko'] . "<br>";
 	}
 
-	echo "</select>";
-	echo "<input type='submit' value='".t("Aloita valmistus")."'>";
 	echo "</td>";
-	echo "</form>";
 
-	###########
+	echo "<td>$kpl</td>";
+
+	echo "<td>" . $valmistus->kesto() . "</td>";
+
 	echo "<td>";
-	$pvm = '2012-12-14 14:30:00<br>';
-	echo "rakaa-aineiden saldot $pvm";
-	$puutteet = puuttuvat_raaka_aineet($valmistus['tunnus']);
-	if(!empty($puutteet)) {
-		foreach($puutteet as $tuoteno => $saldo) {
-			echo $tuoteno . " " . $saldo;
-			echo "<br>";
+	// Valmistuslinjan valintalaatikko
+	if ($valmistus->valmistuslinja() == NULL) {
+		echo "<form method='post'>";
+		echo "<input type='hidden' name='tee' value='lisaa_tyojonoon'>";
+		echo "<input type='hidden' name='valmistus' value='{$valmistus->tunnus()}'>";
+		echo "<select name='valmistuslinja'>";
+		echo "<option value=''>Valitse linja</option>";
+
+		foreach($linjat as $linja) {
+			echo "<option value='$linja[selite]'>$linja[selitetark]</option>";
 		}
+
+		echo "</select>";
+		echo "<input type='submit' value='".t("Aloita valmistus")."'>";
+		echo "</form>";
 	}
-
+	else {
+		echo $valmistus->alkupvm() . " - " . $valmistus->loppupvm();
+	}
 	echo "</td>";
-	###########
-	echo "</tr>";
 
+	echo "<td>" . $valmistus->puutteet() . "</td>";
+
+	echo "</tr>";
 }
 
 echo "</table>";
@@ -666,82 +453,6 @@ echo "</tr>";
 echo "<table>";
 echo "</form>";
 
-/* TY÷JONO TY÷NTEKIJƒ */
-echo "<br>";
-echo "<font class='head'>".t("Tuotannonsuunnittelu")."</font>";
-echo "<hr>";
 
-foreach($linjat as $linja) {
-	echo "<b>".$linja['selitetark']."</b><br>";
-
-	// Haetaan kaikki linjan kalenterimerkinn‰t
-	$tyojono_query = "SELECT kalenteri.kuka, kalenteri.henkilo, nimitys, varattu, yksikko, pvmalku, pvmloppu, kalenteri.tunnus, lasku.valmistuksen_tila
-					FROM kalenteri
-					JOIN tilausrivi on (tilausrivi.yhtio=kalenteri.yhtio and tilausrivi.otunnus=kalenteri.otunnus)
-					JOIN lasku on (lasku.yhtio=kalenteri.yhtio and lasku.tunnus=kalenteri.otunnus)
-					WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
-					AND henkilo='{$linja['selite']}'
-					AND tilausrivi.tyyppi='W'
-					ORDER BY pvmalku";
-	$tyojono_result = pupe_query($tyojono_query);
-
-	if (mysql_num_rows($tyojono_result) == 0) {
-		echo "Ei valmistuksia jonossa.<br>";
-	} else {
-
-		echo "<table border='1'>";
-
-		while($tyojono = mysql_fetch_assoc($tyojono_result)) {
-			echo "<tr>";
-			echo "<td>";
-			echo $tyojono['valmistuksen_tila'] . " " . $tyojono['nimitys'] . " " . $tyojono['varattu'] . " " . $tyojono['yksikko'];
-			echo "</td>";
-
-			echo "<form method='post'>";
-			echo "<td>";
-			echo "<input type='hidden' name='tee' value='paivita_tila'>";
-			echo "<input type='hidden' name='tunnus' value={$tyojono['tunnus']}>";
-			echo "<select name='tila' onchange='submit()'>";
-			echo "<option value=''>Valitse</option>";
-			echo "<option value='OV'>Siir‰ parkkiin</option>";
-			echo "<option value='VA'>Aloita valmistus</option>";
-			echo "<option value='TK'>Keskeyt‰ valmistus</option>";
-			echo "<option value='VT'>Valmis tarkistukseen</option>";
-			echo "</select>";
-			echo "</td>";
-			echo "</form>";
-
-			echo "<td>";
-			echo "({$tyojono['pvmalku']} - {$tyojono['pvmloppu']})";
-			echo "</td>";
-			echo "</tr>";
-		}
-		echo "</table>";
-	}
-	echo "<br>";
-}
-
-/* DEBUG */
-echo "<pre>";
-foreach ($debug as $message) {
-	echo $message;
-}
-echo "</pre>";
-
-// Valmistuslinjojen info popup
-echo "<div id='bubble'>
-	<div id='info'></div>";
-
-echo "<div id='content'></div>
-	<form action='tuotannonsuunnittelu.php?method=update' method='post' id='toiminto'>
-		<input type='hidden' name='tunnus' id='valmistuksen_tunnus'>
-		<select name='tila' onchange='submit()'>
-		<option value=''>Valitse</option>
-		<option value='OV'>Siir‰ parkkiin</option>
-		<option value='VA'>Aloita valmistus</option>
-		<option value='TK'>Keskeyt‰ valmistus</option>
-		<option value='VT'>Valmis tarkistukseen</option>
-		</select>
-	</form>
-</div>";
-
+// FOOTER
+require ("inc/footer.inc");

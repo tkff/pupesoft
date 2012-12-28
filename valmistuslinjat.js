@@ -4,13 +4,12 @@ $(document).ready(function() {
 	yhtio = $('#yhtiorow').val();
 	resurssit = "valmistuslinjat_json.php?yhtio=" + yhtio + "&resurssit=true";
 
-	// Kalenterin settaus
+	// Kalenterin asetukset
 	$('#calendar').fullCalendar({
 		muuttuja: '42',
 		defaultView: 'resourceNextWeeks',
 		editable: false,
 		weekends: false,
-		//date: 1,
 		height: 400,
 		width: 700,
 		monthNames: ['Tammikuu', 'Helmikuu', 'Maaliskuu', 'Huhtikuu', 'Toukokuu', 'Kes‰kuu', 'Hein‰kuu', 'Elokuu', 'Syyskuu', 'Lokakuu', 'Marraskuu', 'Joulukuu'],
@@ -55,8 +54,7 @@ $(document).ready(function() {
 			color: '#060'
 		},
 		eventClick: function(event, jsEvent, view) {
-
-			show_bubble(event, jsEvent);
+			show_popup(event, jsEvent);
 		},
 		eventRender: function(event, element) {
 
@@ -66,7 +64,7 @@ $(document).ready(function() {
 				var next_link = "<a href='tuotannonsuunnittelu.php?method=move&direction=right&tunnus=" + event.tunnus + "'> > </a>";
 
 				// Otsikko
-				var title = event.tila + " " + event.title + " (" + event.varattu + " " + event.yksikko + ")" + event.kesto;
+				var title = event.tila + " " + event.title + event.kesto + "H";
 
 				// Lis‰t‰‰n tiedot eventtiin
 				$(element).children('.fc-event-inner').prepend('<span class="fc-event-next">' + next_link + '</span>');
@@ -76,16 +74,15 @@ $(document).ready(function() {
 
 			$(element).children('.fc-event-inner').children('.fc-event-time').html(parse_date(event.start) + " - " + parse_date(event.end));
 		}
-
 	});
 
-	$('#bubble').click(function()†{
+	$('#bubble').click(function() {
 		$('#bubble').fadeOut('fast');
 	});
-
 });
 
-function show_bubble(event, jsEvent) {
+
+function show_popup(event, jsEvent) {
 	// Info laatikko
 	$('#bubble').css('top', jsEvent.pageY);
 	$('#bubble').css('left', jsEvent.pageX);
@@ -97,9 +94,9 @@ function show_bubble(event, jsEvent) {
 	start = parse_date(event.start);
 	end = parse_date(event.end);
 
-
-	var title = "Valmistus: " + event.tunnus + "<br>";
-	var content = event.title + " " + event.varattu + " " + event.yksikko + "<br>";
+	// Lis‰t‰‰n valmistuksen tiedot kalenteriin
+	// Korvataan \n -rivivaihto <br> -rivivaihdolla
+	var content = event.title.replace(/\n/g, "<br>") + "<br>";
 		content += start + " - " + end + "<br>";
 
 	// Jos on puutteita
@@ -110,14 +107,10 @@ function show_bubble(event, jsEvent) {
 		}
 	}
 
-	if (event.tyyppi == 'valmistus') {
-		$('#info').html(title);
-		$('#content').html(content);
+	if (event.tunnus) {
+		$('#header').html("Valmistus: " + event.tunnus);
 	}
-	else {
-		$('#info').html(event.title);
-		$('#content').html(start + " - " + end);
-	}
+	$('#content').html(content);
 }
 
 function parse_date(pvm) {
@@ -127,18 +120,6 @@ function parse_date(pvm) {
 	H = (pvm.getHours() < 10 ? "0" : "") + pvm.getHours();
 	i = (pvm.getMinutes() < 10 ? "0" : "") + pvm.getMinutes();
 
-
 	// Palautetaan d.m.y h:i
 	return d + "." + m + "." + Y + " " + H + ":" + i;
-}
-
-function parse_tila(select) {
-	var selectedOption = select.options[select.selectedIndex];
-	//alert ("The selected option is " + selectedOption.value);
-	if (selectedOption.value == 'VT') {
-		$('.info h1').html('Valmista tarkastukseen');
-	}
-	else if (selectedOption.value == 'TK')†{
-		$('.info h1').html('Keskeyt‰ tyˆ');
-	}
 }
