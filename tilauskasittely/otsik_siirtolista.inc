@@ -389,6 +389,10 @@
 			$query = "INSERT into ";
 			$postquery = ",laatija = '$kukarow[kuka]', luontiaika=NOW()";
 
+			// Jos valmistuksessa k‰ytet‰‰n tilakoodeja, setataan valmistuksen_tila oletusarvoksi
+			// OV = Odottaa Valmistusta
+			if ($yhtiorow['valmistuksessa_kaytetaan_tilakoodeja']) $postquery .= ", valmistuksen_tila = 'OV'";
+
 			$query2 = "INSERT into ";
 			$postquery2 = ",laatija = '$kukarow[kuka]', luontiaika=NOW()";
 		}
