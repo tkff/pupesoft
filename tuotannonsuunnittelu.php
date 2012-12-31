@@ -78,7 +78,7 @@ if (isset($method) and $method == 'move') {
 /** Valmistuksen tilan p‰ivitt‰minen */
 if (isset($method) and $method == 'update') {
 
-	echo "p‰ivitet‰‰n valmistuksen $tunnus tilaa!<br>";
+	#echo "p‰ivitet‰‰n valmistuksen $tunnus tilaa!<br>";
 
 	// Haetaan valitun valmistuksen tiedot
 	$query = "SELECT *, kalenteri.tunnus as tunnus
@@ -93,9 +93,10 @@ if (isset($method) and $method == 'update') {
 	switch ($tila) {
 		// Siirret‰‰n valmistus takaisin parkkiin
 		case 'OV':
-			echo "Odottaa valmistusta";
+			#echo "Odottaa valmistusta";
 
 			// P‰ivitet‰‰n valmistuksen_tila ja poistetaan valmistus kalenterista
+			# $valmistus->tila($tila);
 			$query = "UPDATE lasku SET valmistuksen_tila='OV' WHERE tunnus='{$valittu_valmistus['otunnus']}'";
 			pupe_query($query);
 
@@ -172,7 +173,7 @@ if (isset($method) and $method == 'update') {
 /** Lis‰t‰‰n valmistus valmistusjonoon
 */
 if ($tee == 'lisaa_tyojonoon') {
-	echo "Lis‰t‰‰n valmistus $valmistus valmistusjonoon '$valmistuslinja'<br>";
+	#echo "Lis‰t‰‰n valmistus $valmistus valmistusjonoon '$valmistuslinja'<br>";
 	lisaa_valmistus($valmistus, $valmistuslinja);
 }
 
@@ -246,31 +247,31 @@ if ($tee == 'paivita_tila') {
 		else {
 			// Pit‰‰ j‰rjestell‰ uusiks
 			$aloitusaika = strtotime('now');
-			echo "aloitusaika: ".date('Y-m-d H:i:s', $aloitusaika)."<br>";
+			#echo "aloitusaika: ".date('Y-m-d H:i:s', $aloitusaika)."<br>";
 			$pvmalku = round_time($aloitusaika);
-			echo "pyˆristetty aloitusaika: ".date('Y-m-d H:i:s', $pvmalku). "<br>";
+			#echo "pyˆristetty aloitusaika: ".date('Y-m-d H:i:s', $pvmalku). "<br>";
 
 			// Aloitetaan valmistus
-			echo "Aloitetaan valmistus: {$valmistus['tunnus']}<br>";
+			#echo "Aloitetaan valmistus: {$valmistus['tunnus']}<br>";
 
 			// Lasketaan valmistuksen kesto
 			$kesto = valmistuksen_kesto($valmistus['otunnus']);
-			echo "kesto: $kesto<br>";
+			#echo "kesto: $kesto<br>";
 
 			// Lasektaan valmistuksen oikea loppuaika
 			$pvmloppu = laske_loppuaika($pvmalku, $kesto*60);
-			echo "valmistuksen arvioitu p‰‰ttymisaika: " . date('Y-m-d, H:i:s', $pvmloppu) . "<br>";
+			#echo "valmistuksen arvioitu p‰‰ttymisaika: " . date('Y-m-d, H:i:s', $pvmloppu) . "<br>";
 
 			// P‰ivitet‰‰n valmistuksen pvmalku ja pvmloppu
 			$pvmalku = date('Y-m-d H:i', $pvmalku);
 			$pvmloppu = date('Y-m-d H:i', $pvmloppu);
 			$query = "UPDATE kalenteri SET pvmalku='{$pvmalku}', pvmloppu='{$pvmloppu}' WHERE tunnus='{$valmistus['tunnus']}'";
-			echo $query."<br>";
+			#echo $query."<br>";
 			pupe_query($query);
 
 			// P‰ivitet‰‰n valmistuksen tila
 			$query = "UPDATE lasku SET valmistuksen_tila='{$tila}' WHERE tunnus='{$valmistus['otunnus']}'";
-			echo $query;
+			#echo $query;
 			pupe_query($query);
 
 			uudelleenlaske_kestot($valmistus['kuka'], $valmistus['pvmalku']);
@@ -346,6 +347,7 @@ $linjat = hae_valmistuslinjat();
 
 echo "<table border=1>";
 echo "<tr>";
+echo "<th>Valmistus</th>";
 echo "<th>Tila</th>";
 echo "<th>Nimitys</th>";
 echo "<th>M‰‰r‰</th>";
@@ -361,7 +363,7 @@ foreach($valmistukset as $valmistus) {
 	echo "<tr>";
 
 	echo "<td>" . $valmistus->tunnus() . "</td>";
-
+	echo "<td>" . $valmistus->getTila() . "</td>";
 	echo "<td>";
 	// Valmistuksella olevat tuotteet
 	$kpl = '';

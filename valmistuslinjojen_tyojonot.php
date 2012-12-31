@@ -6,25 +6,22 @@ require 'valmistuslinjat.inc';
 require 'valmistus.class.php';
 
 if (isset($tee) and $tee == 'paivita_tila') {
-	echo "<pre>";
-	var_dump($_POST);
-	echo "</pre>";
 
 	// Otsikko formille
 	$title = array('VT' => 'Valmista tarkastukseen', 'TK' => 'Keskeytä työ');
 
 	$valmistus = Valmistus::find($tunnus);
 
-	// // Jos tila muutetaan valmis tarkastukseen, keskeytetty tai osavalmistus tulee käytätäjän
-	// // syöttää lisätietoja
-	if ($tila == 'VT' or $tila == 'TK') { // OSAVALMISTATARKASTUKSEEN OVT?
+	// Jos tila muutetaan valmis tarkastukseen, keskeytetty tai osavalmistus tulee käytätäjän
+	// syöttää lisätietoja
+	if ($tila == 'VT' or $tila == 'TK') {
 		echo "<div class='info'>
 			<font class='head'>" . t($title[$tila]) . "</font>
 			<form method='post'>
 				<input type='hidden' name='tee' value='paivita_tila'>
-				<input type='text' name='tila' value='{$tila}'>
+				<input type='hidden' name='tila' value='{$tila}'>
 				<input type='hidden' name='paivita' value='true'>
-				<input type='text' name='tunnus' value='{$valmistus->tunnus()}'>
+				<input type='hidden' name='tunnus' value='{$valmistus->tunnus()}'>
 				<table>
 				<tr>
 					<th>Valmistus</th>
@@ -57,25 +54,31 @@ if (isset($tee) and $tee == 'paivita_tila') {
 	if ($paivita == true and ($tila == 'VT' or $tila == 'TK')) {
 		echo "päivitetään valmistus<br>";
 
-		echo "<pre>";
-		var_dump($jaettavat_valmisteet);
-		echo "</pre>";
-
 		// Loopataan valmistuksen valmisteet läpi
 		foreach($valmistus->tuotteet() as $valmiste) {
 
-			// Jos määrä sama ei tartte splitata
-			if ($jaettavat_valmisteet[$valmiste['tunnus']] == $valmiste['varattu']) {
+			// Tarvitseeko valmistus splitata, eli jäikö jotain valmistamatta?
+			if ($jaettavat_valmisteet[$valmiste['tunnus']] >= 0 AND $jaettavat_valmisteet[$valmiste['tunnus']] < $valmiste['varattu']) {
+				echo "splitataan valmistus: jaa_valmistus({$valmiste['tunnus']}, $jaettavat_valmisteet)";
+
+				try {
+					$uusi_valmistus = jaa_valmistus($valmistus->tunnus(), $jaettavat_valmisteet);
+				} catch (Exception $e) {
+					echo "Virhe, ". $e->getMessage();
+				}
+			}
+			// Ei splitata splitata jos syötetty määrä on sama kuin valmisteen
+			elseif ($jaettavat_valmisteet[$valmiste['tunnus']] == $valmiste['varattu']) {
 				echo "$valmiste[nimitys] $valmiste[varattu] $valmiste[yksikko] " . $jaettavat_valmisteet[$valmiste[tunnus]] . "<br>";
-				$valmistus->tila($tila);
 
 			}
+			// Ei voi valmistaa enemmän kuin on tilattu
 			else {
-				// Splitataan valmistus
-				echo "splitataan valmistus: jaa_valmistus({$valmiste['tunnus']}, $jaettavat_valmisteet)";
-				// Merkataan alkuperäinen valmiiksi tai keskeytetyksi
-				$valmistus->tila($tila);
+				echo "et voi valmistaa enemmän kuin on tilattu";
 			}
+
+			// Merkataan alkuperäinen valmiiksi tai keskeytetyksi
+			$valmistus->tila($tila);
 
 			// Ylityötunnit ja kommentit kalenteri tauluun
 			$ylityo = $ylityotunnit[$valmiste['tunnus']];
@@ -84,6 +87,9 @@ if (isset($tee) and $tee == 'paivita_tila') {
 			$query = "UPDATE kalenteri SET kentta01='{$ylityo}', kentta02='{$kommentti}' WHERE yhtio='{$kukarow['yhtio']}' AND otunnus={$valmistus->tunnus()}";
 			pupe_query($query);
 		}
+
+		echo "valmistus päivitetty<br>";
+		if (isset($uusi_valmistus)) echo "valmistus splitattu, uuden id: $uusi_valmistus<br>";
 	}
 }
 
@@ -91,7 +97,7 @@ if (!isset($tee) or $tee == '') {
 
 	/* TYÖJONO TYÖNTEKIJÄ */
 	echo "<br>";
-	echo "<font class='head'>".t("Linjojen työjonot")."</font>";
+	echo "<font class='head'>".t("Valmistuslinjojen työjonot")."</font>";
 	echo "<hr>";
 
 	// Haetaan valmistuslinjat

@@ -8,7 +8,7 @@
 function paivita_valmistus($tunnus, $tila) {
       global $kukarow;
 
-      echo "p‰ivitet‰‰n valmistus $tunnus tila $tila";
+      #echo "p‰ivitet‰‰n valmistus $tunnus tila $tila";
 
       if (empty($tunnus) or empty($tila)) {
             exit("Virhe valmistuksen p‰ivityksess‰");
@@ -69,7 +69,7 @@ function hae_valmistus($tunnus) {
                   WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
                   AND kalenteri.otunnus='{$tunnus}'";
       $result = pupe_query($query);
-      echo $query;
+      #echo $query;
       $valmistus = mysql_fetch_assoc($result);
 
       return $valmistus;
@@ -116,19 +116,19 @@ function lisaa_valmistus($valmistus, $linja) {
       // Jos linjalla ei ole valmistuksia
       if (mysql_num_rows($result) == 0) {
             $start = round_time(strtotime('now'));
-            echo "aloitetaan t‰st‰ hetkest‰ " . date('Y-m-d H:i:s', $start) . "<br>";
+            #echo "aloitetaan t‰st‰ hetkest‰ " . date('Y-m-d H:i:s', $start) . "<br>";
       }
       // Lis‰t‰‰n viimeisimm‰n valmistuksen per‰‰n
       else {
             $start = strtotime($edellinen_valmistus['pvmloppu']);
-            echo "lis‰t‰‰n viimeisimm‰n valmistuksen per‰‰n" . date('Y-m-d H:i:s', $start) . "<br>";
+            #echo "lis‰t‰‰n viimeisimm‰n valmistuksen per‰‰n" . date('Y-m-d H:i:s', $start) . "<br>";
       }
 
       // Lasketaan loppuaika
       $kesto = valmistuksen_kesto($valmistus);
-      echo "valmistus kest‰‰ $kesto<br>";
+      #echo "valmistus kest‰‰ $kesto<br>";
       $end = laske_loppuaika($start, $kesto * 60);
-      echo "valmistuksen loppuaika on " . date('Y-m-d H:i:s', $end);
+      #echo "valmistuksen loppuaika on " . date('Y-m-d H:i:s', $end);
 
       $pvmalku = date('Y-m-d H:i:s', $start);
       $pvmloppu = date('Y-m-d H:i:s', $end);
@@ -206,7 +206,7 @@ function laske_loppuaika($alkuaika, $minuutit = 0) {
       // Setataan loppuaika aluksi pyˆristettyyn aloitusaikaan
       $loppuaika = round_time($alkuaika);
 
-      echo "kesto: ". $minuutit/60 ." aloitetaan lis‰‰m‰‰n alkuajasta (alkuaika: ".date('Y-m-d H:i:s', $alkuaika)."): ".date('Y-m-d H:i:s', $loppuaika)."<br>";
+      #echo "kesto: ". $minuutit/60 ." aloitetaan lis‰‰m‰‰n alkuajasta (alkuaika: ".date('Y-m-d H:i:s', $alkuaika)."): ".date('Y-m-d H:i:s', $loppuaika)."<br>";
 
       // Haetaan lomat ja muut kalenterimerkinn‰t mitk‰ vaikuttaa loppup‰iv‰n laskemiseen
       $query = "SELECT pvmalku, pvmloppu FROM kalenteri WHERE yhtio='{$kukarow['yhtio']}' AND tyyppi IN ('SA', 'PY') ORDER BY pvmalku";
@@ -236,7 +236,7 @@ function laske_loppuaika($alkuaika, $minuutit = 0) {
             }
       }
 
-      echo "loppuaika: ".date('Y-m-d H:i:s', $loppuaika)."<br>";
+      #echo "loppuaika: ".date('Y-m-d H:i:s', $loppuaika)."<br>";
       return $loppuaika;
 }
 
@@ -246,7 +246,7 @@ function rebuild_valmistuslinjat($from = 'now') {
       global $kukarow;
 
       $from = date('Y-m-d H:i:s', strtotime($from));
-      echo "rakennetaan valmistuslinja uudelleen alkaen: $from <br>";
+     # echo "rakennetaan valmistuslinja uudelleen alkaen: $from <br>";
 
       // Hetaan kaikki valmistuslinjat
       $query = "SELECT selite FROM avainsana WHERE yhtio='{$kukarow['yhtio']}' AND laji='VALMISTUSLINJA' ORDER BY selite";
@@ -254,7 +254,7 @@ function rebuild_valmistuslinjat($from = 'now') {
 
       // J‰rjestell‰‰n linja kerrallaan
       while($linja = mysql_fetch_assoc($valmistuslinjat_result)) {
-            echo "j‰rjestell‰‰n linja $linja[selite]<br>";
+           # echo "j‰rjestell‰‰n linja $linja[selite]<br>";
 
             // Haetaan kaikki linjan valmistukset
             $query = "SELECT *, kalenteri.tunnus as tunnus
@@ -281,14 +281,14 @@ function rebuild_valmistuslinjat($from = 'now') {
 
             // Loopataan valmistukset l‰pi ja j‰rjestell‰‰n
             foreach($valmistukset as $valmistus) {
-                  echo "valmistus: $valmistus[tunnus]<br>";
+                 # echo "valmistus: $valmistus[tunnus]<br>";
                   if ($edellinen_valmistus == '') $edellinen_valmistus = $valmistus;
-                  echo "edellinen_valmistus :$edellinen_valmistus[tunnus]<br>";
+                 # echo "edellinen_valmistus :$edellinen_valmistus[tunnus]<br>";
 
                   // Siiret‰‰n vain valmistusta odottavia valmistuksia
                   if ($valmistus['valmistuksen_tila'] == 'OV') {
 
-                        echo "tila ov, voidaan siirell‰<br>";
+                       # echo "tila ov, voidaan siirell‰<br>";
                         // Jos tarkasteltavan valmistuksen pvmalku ei ole edellisen pvmloppu, eli
                         // valmistukset eiv‰t ole 'toisissaan kiinni', siirret‰‰n tarkasteltava
                         // edellisen loppuun.
@@ -296,7 +296,7 @@ function rebuild_valmistuslinjat($from = 'now') {
                               // Yhdistet‰‰n edellisen loppu t‰m‰n alkuun
                               $valmistus['pvmalku'] = $edellinen_valmistus['pvmloppu'];
 
-                              echo "valmistus pvmalku $valmistus[pvmalku] pvmloppu $valmistus[pvmloppu]<br>";
+                            #  echo "valmistus pvmalku $valmistus[pvmalku] pvmloppu $valmistus[pvmloppu]<br>";
                               // lasketaan uusi loppuaika
                               $kesto = valmistuksen_kesto($valmistus['otunnus']);
                               $pvmloppu = laske_loppuaika(strtotime($valmistus['pvmalku']), $kesto * 60);
@@ -307,7 +307,7 @@ function rebuild_valmistuslinjat($from = 'now') {
                                           SET pvmalku='{$valmistus['pvmalku']}', pvmloppu='{$valmistus['pvmloppu']}'
                                           WHERE tunnus='{$valmistus['tunnus']}'";
                               pupe_query($query);
-                              echo "$query <br>";
+                           #   echo "$query <br>";
                         }
 
                   }
@@ -497,7 +497,7 @@ function vaihda_valmistusten_paikkaa($vasen, $oikea) {
 
       // Lasketaan vasemman loppuaika uudelleen
       $kesto = valmistuksen_kesto($vasen);
-      echo "vasen kesto: $kesto <br>";
+      #echo "vasen kesto: $kesto <br>";
       $uusi_pvmloppu = laske_loppuaika(strtotime($vasen['pvmalku']), $kesto * 60);
       $vasen['pvmloppu'] = date('Y-m-d H:i:s', $uusi_pvmloppu);
 
@@ -506,7 +506,7 @@ function vaihda_valmistusten_paikkaa($vasen, $oikea) {
 
       // Lasketaan oikean loppuaika uudelleen
       $kesto = valmistuksen_kesto($oikea);
-      echo "oikea kesto: $kesto <br>";
+      #echo "oikea kesto: $kesto <br>";
       $uusi_pvmloppu = laske_loppuaika(strtotime($oikea['pvmalku']), $kesto * 60);
       $oikea['pvmloppu'] = date('Y-m-d H:i:s', $uusi_pvmloppu);
 
@@ -514,14 +514,14 @@ function vaihda_valmistusten_paikkaa($vasen, $oikea) {
       $query = "UPDATE kalenteri
                   SET pvmalku='{$vasen['pvmalku']}', pvmloppu='{$vasen['pvmloppu']}'
                   WHERE yhtio='{$kukarow['yhtio']}' and otunnus={$vasen['tunnus']}";
-      echo $query."<br>";
+      #echo $query."<br>";
       pupe_query($query);
 
       $query = "UPDATE kalenteri
                   SET pvmalku='{$oikea['pvmalku']}', pvmloppu='{$oikea['pvmloppu']}'
                   WHERE yhtio='{$kukarow['yhtio']}' and otunnus={$oikea['tunnus']}";
       pupe_query($query);
-      echo $query."<br>";
+      #echo $query."<br>";
 
       return true;
 }
@@ -540,15 +540,15 @@ function jaa_valmistus($tunnus, $params) {
 
       // Haetaan valmistuksen tiedot (lasku)
       $original_query = "SELECT *
-                                    FROM lasku
-                                    WHERE yhtio='{$kukarow['yhtio']}'
-                                    AND tunnus=$tunnus
-                                    LIMIT 1";
+                        FROM lasku
+                        WHERE yhtio='{$kukarow['yhtio']}'
+                        AND tunnus=$tunnus
+                        LIMIT 1";
       $original_result = pupe_query($original_query);
       $original = mysql_fetch_array($original_result, 1);
 
       if (mysql_num_rows($original_result) == 0) {
-            exit("Virhe valmistuksen jakamisessa, laskua ei lˆytynyt");
+            throw new Exception("Virhe valmistuksen jakamisessa, laskua ei lˆytynyt");
       }
 
       // laskun kopio, ei luoda ennenkuin tiedet‰‰n ett‰ tilausrivej‰ tarvitsee kopioida
@@ -571,13 +571,15 @@ function jaa_valmistus($tunnus, $params) {
             $raaka_aineen_suhde = $original_kpl / $valmiste['varattu'];
 
             // Jos syˆtetty nolla ei tehd‰ kopioita
+            if (! is_numeric($original_kpl)) throw new Exception("Syˆtetyn m‰‰r‰n on oltava numero");
+
             if (($original_kpl == 0 or $original_kpl == $valmiste['varattu']) and mysql_num_rows($valmisteet_result) == 1) {
                   $errors = "Valmistusta ei jaettu";
                   continue;
             }
 
             // Jos splitatavan m‰‰r‰ on oikein eli v‰lill‰ (0 - tilattu_m‰‰r‰)
-            if (is_numeric($original_kpl) and $original_kpl >= 0 and $original_kpl <= $valmiste['varattu']) {
+            if ($original_kpl >= 0 and $original_kpl <= $valmiste['varattu']) {
 
                   // Jos m‰‰r‰ on sallitun rajoissa, tehd‰‰n laskusta kopio
                   if (empty($copy)) {
@@ -640,12 +642,11 @@ function jaa_valmistus($tunnus, $params) {
 
             }
             else {
-                  $errors = "Syˆtetty m‰‰r‰ ei kelpaa";
+                  throw new Exception("Syˆtetyn m‰‰r‰n on oltava v‰lill‰ 0 - {$valmiste['varattu']}");
             } // End of splittailut
 
       } // End of valmisteet
 
-      // palautetaan virheet tai true
-      $return = (isset($errors)) ? $errors : '';
-      return $return;
+      // palautetaan kopioidun laskun tunnus
+      $return = (isset($copy['tunnus'])) ? $copy['tunnus'] : null;
 }

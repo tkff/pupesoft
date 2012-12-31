@@ -21,6 +21,12 @@ class Valmistus {
 	// Valmistuksen kesto, tuotteiden kestot summattuna
 	private $kesto;
 
+	// Valmistuksen tilat
+	const ODOTTAA = 'OV';
+	const VALMISTUKSESSA = 'VA';
+	const KESKEYTETTY = 'TK';
+	const VALMIS_TARKASTUKSEEN = 'VT';
+	const TARKASTETTU = 'TA';
 
 	function __construct() {}
 
@@ -48,6 +54,20 @@ class Valmistus {
 
 		// Palautetaan tuotteet array
 		return $this->tuotteet;
+	}
+
+	function raaka_aineet() {
+		global $kukarow;
+
+		$query = "SELECT * FROM tilausrivi WHERE yhtio='{$kukarow['yhtio']}' AND otunnus=$this->tunnus";
+		$result = pupe_query($query);
+
+		$raaka_aineet = array();
+		while ($row = mysql_fetch_assoc($result)) {
+			$raaka_aineet[] = $row;
+		}
+
+		return $raaka_aineet;
 	}
 
 	/** etsitään valmistuksen puutteet
@@ -110,42 +130,44 @@ class Valmistus {
 		}
 	}
 
+	function getTila() {
+		return $this->tila;
+	}
+
 	/** Päivittää valmistuksen tilan
 	*/
 	function tila($tila) {
 		global $kukarow;
 
-		/** Sallitut tilat ja niiden mahdolliset vaihtoehdot
-		* OV => Odottaa valmistusta,
-		* VA => Valmistuksessa,
-		* TK => Työ keskeytetty,
-		* VT => Valmis tarkastukseen,
-		* TA => Tarkistettu
-		*/
+		/** Sallitut tilat ja niiden mahdolliset vaihtoehdot*/
 		$states = array(
-			'OV' => array('VA'),
-			'VA' => array('TK', 'VT'),
-			'TK' => array('VA'),
-			'VT' => array('TA', 'OV')
+			Valmistus::ODOTTAA 				=> array(Valmistus::VALMISTUKSESSA, Valmistus::VALMIS_TARKASTUKSEEN, Valmistus::KESKEYTETTY),
+			Valmistus::VALMISTUKSESSA 		=> array(Valmistus::KESKEYTETTY, Valmistus::VALMIS_TARKASTUKSEEN),
+			Valmistus::KESKEYTETTY 			=> array(Valmistus::VALMISTUKSESSA),
+			Valmistus::VALMIS_TARKASTUKSEEN => array(Valmistus::TARKASTETTU, Valmistus::ODOTTAA)
 			);
 
 		// Voidaanko uuteen tilaan vaihtaa,
-		// eli löytyykö haluttu tila nykyisen tilan vaihtoehdoista.
+		// eli löytyykö nykyisen tilan vaihtoehdoista haluttu tila
 		if (in_array($tila, $states[$this->tila]))  {
 
-			// TODO: tarkistetaan mikä tila on nyt jne...
-			$query = "UPDATE lasku SET valmistuksen_tila='$tila' WHERE yhtio='{$kukarow['yhtio']}' AND tunnus=$this->tunnus";
-			echo $query;
-			#$result = pupe_query($query);
+			// Päivitetään valmistuksen tila
+			$query = "UPDATE lasku
+						SET valmistuksen_tila='$tila'
+						WHERE yhtio='{$kukarow['yhtio']}'
+						AND tunnus=$this->tunnus";
+			$result = pupe_query($query);
 		}
 		else {
-			exit("Laiton tilan muutos");
+			throw new Exception("Ei voida muuttaa tilasta $this->tila tilaan $tila");
 		}
 	}
 
 	/** Hakee kaikki valmistukset */
 	static function all() {
 		global $kukarow;
+
+		// hakee kaikki valmistukset (lasku/kalenteri)
 		$query = "SELECT
 						lasku.yhtio,
 						lasku.tunnus,
@@ -172,11 +194,15 @@ class Valmistus {
 
 		$query = "SELECT
 						lasku.yhtio,
+						lasku.nimi,
+						lasku.ytunnus,
 						lasku.tunnus,
 						lasku.valmistuksen_tila as tila,
-						kalenteri.henkilo as valmistuslinja
+						kalenteri.henkilo as valmistuslinja,
+						kalenteri.kentta01 as ylityotunnit,
+						kalenteri.kentta02 as kommentti
 					FROM lasku
-					LEFT JOIn kalenteri on (lasku.yhtio=kalenteri.yhtio AND lasku.tunnus=kalenteri.otunnus)
+					LEFT JOIN kalenteri on (lasku.yhtio=kalenteri.yhtio AND lasku.tunnus=kalenteri.otunnus)
 					WHERE lasku.yhtio='{$kukarow['yhtio']}'
 					AND lasku.tunnus=$tunnus LIMIT 1";
 		$result = pupe_query($query);
@@ -187,8 +213,34 @@ class Valmistus {
 		else {
 			return false;
 		}
+	}
 
+	/** hakee valmistukset tilan mukaan */
+	static function find_by_tila($tila) {
+		global $kukarow;
 
+		$query = "SELECT
+						lasku.valmistuksen_tila as tila,
+						lasku.yhtio,
+						lasku.tunnus,
+						kalenteri.kentta01 as ylityotunnit,
+						kalenteri.kentta02 as kommentti
+
+					FROM lasku
+					LEFT JOIN kalenteri ON (lasku.yhtio=kalenteri.yhtio AND lasku.tunnus=kalenteri.otunnus)
+					WHERE lasku.yhtio='{$kukarow['yhtio']}'
+					AND lasku.tila='V'
+					AND lasku.alatila=''
+					AND lasku.valmistuksen_tila='VT'";
+
+		$result = pupe_query($query);
+
+		$valmistukset = array();
+		while ($valmistus = mysql_fetch_object($result, 'valmistus')) {
+			$valmistukset[] = $valmistus;
+		}
+
+		return $valmistukset;
 	}
 }
 
