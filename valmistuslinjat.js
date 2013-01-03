@@ -6,7 +6,6 @@ $(document).ready(function() {
 
 	// Kalenterin asetukset
 	$('#calendar').fullCalendar({
-		muuttuja: '42',
 		defaultView: 'resourceNextWeeks',
 		editable: false,
 		weekends: false,
@@ -38,9 +37,6 @@ $(document).ready(function() {
 						day:      'p‰iv‰'
 					},
 		resources: resurssit,
-		// events: {
-		//	url: valmistukset
-		// },
 		events: {
 			url: 'valmistuslinjat_json.php',
 			type: 'GET',
@@ -58,9 +54,10 @@ $(document).ready(function() {
 		},
 		eventRender: function(event, element) {
 
+			// Valmistuksille lis‰t‰‰n nappulat, muille ei
 			if (event.tyyppi === 'valmistus') {
 				// Eteenp‰in ja taaksep‰in siirto napit
-				var prev_link = "<a href='tuotannonsuunnittelu.php?method=move&direction=left&tunnus=" + event.tunnus + "''> < </a>";
+				var prev_link = "<a href='tuotannonsuunnittelu.php?method=move&direction=left&tunnus=" + event.tunnus + "'> < </a>";
 				var next_link = "<a href='tuotannonsuunnittelu.php?method=move&direction=right&tunnus=" + event.tunnus + "'> > </a>";
 
 				// Otsikko

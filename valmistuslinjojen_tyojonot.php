@@ -10,6 +10,7 @@ if (isset($tee) and $tee == 'paivita_tila') {
 	// Otsikko formille
 	$title = array('VT' => 'Valmista tarkastukseen', 'TK' => 'Keskeytä työ');
 
+	// Haetaan valmistus
 	$valmistus = Valmistus::find($tunnus);
 
 	// Jos tila muutetaan valmis tarkastukseen, keskeytetty tai osavalmistus tulee käytätäjän
@@ -78,7 +79,7 @@ if (isset($tee) and $tee == 'paivita_tila') {
 			}
 
 			// Merkataan alkuperäinen valmiiksi tai keskeytetyksi
-			$valmistus->tila($tila);
+			$valmistus->setTila($tila);
 
 			// Ylityötunnit ja kommentit kalenteri tauluun
 			$ylityo = $ylityotunnit[$valmiste['tunnus']];
@@ -96,12 +97,15 @@ if (isset($tee) and $tee == 'paivita_tila') {
 if (!isset($tee) or $tee == '') {
 
 	/* TYÖJONO TYÖNTEKIJÄ */
-	echo "<br>";
 	echo "<font class='head'>".t("Valmistuslinjojen työjonot")."</font>";
 	echo "<hr>";
 
 	// Haetaan valmistuslinjat
 	$linjat = hae_valmistuslinjat();
+
+	if (empty($linjat)) {
+		echo "Ei valmistuslinjoja";
+	}
 
 	foreach($linjat as $linja) {
 
@@ -109,7 +113,7 @@ if (!isset($tee) or $tee == '') {
 		echo "<tr><th colspan=4>".$linja['selitetark']."</th></tr>";
 		echo "<th>Tila</th><th>Nimitys</th><th>Aika</th><th></th>";
 
-		// Haetaan kaikki linjan kalenterimerkinnät
+		// Haetaan linjan 4 uusinta kalenterimerkinnät
 		$tyojono_query = "SELECT kalenteri.kuka, kalenteri.henkilo, nimitys, varattu, yksikko, pvmalku, pvmloppu, kalenteri.tunnus, lasku.valmistuksen_tila, kalenteri.otunnus
 						FROM kalenteri
 						JOIN tilausrivi on (tilausrivi.yhtio=kalenteri.yhtio and tilausrivi.otunnus=kalenteri.otunnus)

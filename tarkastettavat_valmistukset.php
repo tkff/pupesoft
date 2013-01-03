@@ -9,12 +9,13 @@ require 'valmistus.class.php';
 echo "<font class='head'>".t("Tarkastettavat valmistukset")."</font>";
 echo "<hr>";
 
+/** Päivitetään valmistuksen tila */
 if ($tee == 'paivita' and isset($tunnus)) {
 	$valmistus = Valmistus::find($tunnus);
 
 	// Yritetään muuttaa valmistuksen tilaa
 	try {
-		$valmistus->tila(Valmistus::TARKASTETTU);
+		$valmistus->setTila(Valmistus::TARKASTETTU);
 	} catch (Exception $e) {
 		$errors = $e->getMessage();
 	}
@@ -86,44 +87,49 @@ else {
 	// Haetaan valmistukset joiden tila on Valmis Tarkastukseen (VT)
 	$valmistukset = Valmistus::find_by_tila(Valmistus::VALMIS_TARKASTUKSEEN);
 
-	echo "<table>
-			<tr>
-				<th>Tila</th>
-				<th>tunnus</th>
-				<th>Valmiste</th>
-				<th>Ylityötunnit</th>
-				<th>Kommentti</th>
-				<th colspan=2></th>
-			</tr>";
+	if ($valmistukset) {
 
-	// Listataan valmistukset
-	foreach($valmistukset as $valmistus) {
-		echo "<tr>";
-		echo "<td>{$valmistus->getTila()}</td>";
-		echo "<td>{$valmistus->tunnus()}</td>";
+		echo "<table>
+				<tr>
+					<th>Tila</th>
+					<th>tunnus</th>
+					<th>Valmiste</th>
+					<th>Ylityötunnit</th>
+					<th>Kommentti</th>
+					<th colspan=2></th>
+				</tr>";
 
-		echo "<td>";
-		foreach($valmistus->tuotteet() as $valmiste) {
-			echo $valmiste['nimitys']."<br>";
-		}
-		echo "</td>";
+		// Listataan valmistukset
+		foreach($valmistukset as $valmistus) {
+			echo "<tr>";
+			echo "<td>{$valmistus->getTila()}</td>";
+			echo "<td>{$valmistus->tunnus()}</td>";
 
-		echo "<td>{$valmistus->ylityotunnit}</td>";
-		echo "<td>{$valmistus->kommentti}</td>";
-		echo "<td><form method='get'>
-					<input type='hidden' name='tee' value='nayta'>
-					<input type='hidden' name='tunnus' value='{$valmistus->tunnus()}'>
-					<input type='submit' value='Valitse'>
+			echo "<td>";
+			foreach($valmistus->tuotteet() as $valmiste) {
+				echo $valmiste['nimitys']."<br>";
+			}
+			echo "</td>";
+
+			echo "<td>{$valmistus->ylityotunnit}</td>";
+			echo "<td>{$valmistus->kommentti}</td>";
+			echo "<td><form method='get'>
+						<input type='hidden' name='tee' value='nayta'>
+						<input type='hidden' name='tunnus' value='{$valmistus->tunnus()}'>
+						<input type='submit' value='Valitse'>
+						</form></td>";
+			echo "<td><form method='post'>
+						<input name='tee' type='hidden' value='paivita'>
+						<input type='hidden' name='tunnus' value='{$valmistus->tunnus()}'>
+						<input name='submit' type='submit' value='Tarkastettu'>
 					</form></td>";
-		echo "<td><form method='post'>
-					<input name='tee' type='hidden' value='paivita'>
-					<input type='hidden' name='tunnus' value='{$valmistus->tunnus()}'>
-					<input name='submit' type='submit' value='Tarkastettu'>
-				</form></td>";
-		echo "</tr>";
-	}
+			echo "</tr>";
+		}
 
-	echo "</table>";
+		echo "</table>";
+	} else {
+		echo "Ei tarkastettavia valmistuksia";
+	}
 }
 
 if (isset($errors)) echo "<font class='error'>$errors</font>";
