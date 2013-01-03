@@ -43,7 +43,7 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 
 	// Haetaan yhtiökohtaiset merkinnät
 	$query = "SELECT kalenteri.pvmalku,
-					kalenteri.pvmloppu ,
+					kalenteri.pvmloppu,
 					kalenteri.kuka,
 					kalenteri.henkilo,
 					kalenteri.tyyppi
@@ -52,27 +52,46 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 				AND tyyppi='PY'";
 	$result = pupe_query($query);
 
-	$muut_merkinnat = array();
+	$yhtiokohtaiset_tapahtumat = array();
 	// Lomat ja muut yhtiökohtaiset merkinnät
 	while ($pyha = mysql_fetch_assoc($result)) {
-		$muut_merkinnat[] = $pyha;
+		$yhtiokohtaiset_tapahtumat[] = $pyha;
 	}
 
 	// Loopataan valmistuslinjat yksi kerrallaan
 	foreach($valmistuslinjat as $linja) {
 
-		foreach($muut_merkinnat as $merkinta) {
+		// Lisätään yhtiokohtaiset tapahtumat
+		foreach($yhtiokohtaiset_tapahtumat as $tapahtuma) {
 			$json = array();
 			$json['title'] 	= utf8_encode("Pyhä");
-			$json['start'] 	= $merkinta['pvmalku'];
-			$json['end'] 		= $merkinta['pvmloppu'];
-			$json['allDay'] 	= false;
+			$json['start'] 	= $tapahtuma['pvmalku'];
+			$json['end'] 	= $tapahtuma['pvmloppu'];
+			$json['allDay'] = false;
 			$json['resource'] = $linja['id'];
 			$json['color'] 	= '#666';
 			$all_events[] 	= $json;
 		}
 
-		// Valmistuslinjalla olevat valmistukset
+		// Haetaan ja lisätään henkilökohtaiset tapahtumat
+		$query = "SELECT kalenteri.pvmalku as start,
+						kalenteri.pvmloppu as end,
+						kalenteri.kuka,
+						kalenteri.henkilo as resource,
+						kalenteri.tyyppi
+					FROM kalenteri
+					WHERE yhtio='{$kukarow['yhtio']}'
+					AND henkilo='{$linja['id']}'
+					AND tyyppi IN ('PE', 'SA', 'MT', 'LO', 'PO')";
+		$result = pupe_query($query);
+
+		while ($row = mysql_fetch_assoc($result)) {
+			$row['allDay'] = false;
+			$row['title'] = $row['tyyppi'];
+			$all_events[] = $row;
+		}
+
+		// Lisätään Valmistuslinjalla olevat valmistukset
 		$valmistukset = hae_valmistuslinjan_valmistukset($linja);
 		foreach($valmistukset as $valmistus) {
 			#echo "valmistus: $valmistus[otunnus] $valmistus[pvmalku] $valmistus[pvmloppu]<br>";
