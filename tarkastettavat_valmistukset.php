@@ -15,7 +15,7 @@ if ($tee == 'paivita' and isset($tunnus)) {
 
 	// Yritetään muuttaa valmistuksen tilaa
 	try {
-		$valmistus->setTila(Valmistus::TARKASTETTU);
+		$valmistus->setTila(Valmistus::VALMIS_TARKASTUKSEEN);
 	} catch (Exception $e) {
 		$errors = $e->getMessage();
 	}
