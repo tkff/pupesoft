@@ -22,11 +22,11 @@ class Valmistus {
 	private $kesto;
 
 	// Valmistuksen tilat
-	const ODOTTAA = 'OV';
-	const VALMISTUKSESSA = 'VA';
-	const KESKEYTETTY = 'TK';
-	const VALMIS_TARKASTUKSEEN = 'VT';
-	const TARKASTETTU = 'TA';
+	const ODOTTAA 				= 'OV';
+	const VALMISTUKSESSA 		= 'VA';
+	const KESKEYTETTY 			= 'TK';
+	const VALMIS_TARKASTUKSEEN 	= 'VT';
+	const TARKASTETTU 			= 'TA';
 
 	function __construct() {}
 
@@ -73,7 +73,65 @@ class Valmistus {
 	/** etsit‰‰n valmistuksen puutteet
 	*/
 	function puutteet() {
-		return "Puutteet";
+		global $kukarow;
+
+		$aloitus_pvm = $this->alkupvm();
+
+		// Haetaan raaka-aineet
+		$query = "SELECT *
+		            FROM tilausrivi
+		            WHERE yhtio='{$kukarow['yhtio']}'
+		            AND otunnus='{$this->tunnus}'
+		            AND tuoteno!='TY÷'
+		            AND tyyppi='V'";
+		$result = pupe_query($query);
+
+		$puutteet = array();
+
+		// Tarkistetaan kaikkien raaka-aineiden saldot
+		while ($raaka_aine = mysql_fetch_assoc($result)) {
+			$saldo = array();
+			list($saldo['saldo'], $saldo['hyllyssa'], $saldo['myytavissa']) = saldo_myytavissa($raaka_aine['tuoteno']);
+
+			#echo "tuoteno: $raaka_aine[tuoteno] saldo: $saldo[saldo] hyllyssa: $saldo[hyllyssa] myytavissa: $saldo[myytavissa]<br>";
+
+			// Varatut kappaleet valmistuksilta jotka ovat jo valmistuslinjalla.
+			// Valmistuslinjalla olevat valmistukset varaavat saldoa ja uuden valmistuksen on
+			// tarkistettava paljon ne v‰hent‰v‰t raaka-aineiden saldoa.
+			$muut_query = "SELECT tilausrivi.otunnus, COALESCE(sum(tilausrivi.varattu), 0) AS varattu
+			            FROM kalenteri
+			                  JOIN lasku ON (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
+			                  JOIN tilausrivi ON (lasku.yhtio=tilausrivi.yhtio AND lasku.tunnus=tilausrivi.otunnus)
+			            WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
+			                  AND kalenteri.tyyppi='valmistus'
+			                  AND tilausrivi.tyyppi='V'
+			                  AND tilausrivi.tuoteno='{$raaka_aine['tuoteno']}'
+			                  AND kalenteri.pvmalku < '$aloitus_pvm'";
+			$muut_valmistukset_result = pupe_query($muut_query);
+			$muut_valmistukset = mysql_fetch_assoc($muut_valmistukset_result);
+			#echo "muut: $muut_valmistukset[varattu] ($muut_valmistukset[otunnus])<br>";
+
+
+			// Haetaan raaka-aineen ostotilauksia, jotka vaikuttavat valmistuksen aloitukseen
+			$query = "SELECT COALESCE(sum(varattu), 0) AS varattu
+			            FROM tilausrivi
+			            WHERE yhtio='{$kukarow['yhtio']}'
+			            AND tuoteno='{$raaka_aine['tuoteno']}'
+			            AND tyyppi='O'
+			            AND kerattyaika != '0000-00-00 00:00:00'
+			            AND kerattyaika < '$aloitus_pvm'";
+			$ostotilaukset_result = pupe_query($query);
+			$ostotilaukset = mysql_fetch_assoc($ostotilaukset_result);
+
+			#echo "ostot: $ostotilaukset[varattu]<br>";
+
+			$_saldo = $saldo['myytavissa'] - $muut_valmistukset['varattu'] + $ostotilaukset['varattu'];
+
+			if ($_saldo <= 0) {
+				$puutteet[$raaka_aine['tuoteno']] = $_saldo;
+			}
+		}
+		return $puutteet;
 	}
 
 	/** Valimstuksen alkupvm */
@@ -141,7 +199,7 @@ class Valmistus {
 
 		/** Sallitut tilat ja niiden mahdolliset vaihtoehdot*/
 		$states = array(
-			Valmistus::ODOTTAA 				=> array(Valmistus::VALMISTUKSESSA, Valmistus::VALMIS_TARKASTUKSEEN, Valmistus::KESKEYTETTY),
+			Valmistus::ODOTTAA 				=> array(Valmistus::VALMISTUKSESSA, Valmistus::VALMIS_TARKASTUKSEEN, Valmistus::KESKEYTETTY, Valmistus::ODOTTAA),
 			Valmistus::VALMISTUKSESSA 		=> array(Valmistus::KESKEYTETTY, Valmistus::VALMIS_TARKASTUKSEEN),
 			Valmistus::KESKEYTETTY 			=> array(Valmistus::VALMISTUKSESSA),
 			Valmistus::VALMIS_TARKASTUKSEEN => array(Valmistus::TARKASTETTU, Valmistus::ODOTTAA)
@@ -197,6 +255,9 @@ class Valmistus {
 						throw new Exception("Valmistuksen aikoja ei p‰ivitetty");
 					}
 
+					// P‰ivitet‰‰n lasku.alatila='C' # Ker‰tty!
+
+					echo "valmis";
 					break;
 
 				// Valmistus keskeytetty
@@ -206,7 +267,9 @@ class Valmistus {
 
 				// Valmis tarkastukseen
 				case Valmistus::VALMIS_TARKASTUKSEEN:
-					throw new Exception("Tyhj‰");
+					//throw new Exception("Tyhj‰");
+					echo "valmistus valmis tarkastukseen";
+
 					break;
 
 				// Muut
@@ -231,7 +294,8 @@ class Valmistus {
 	static function all() {
 		global $kukarow;
 
-		// hakee kaikki valmistukset (lasku/kalenteri)
+		// Hakee kaikki keskener‰iset valmistukset (lasku/kalenteri)
+		// Valmistukset jotka ovat tilassa kesken tai tulostusjonossa
 		$query = "SELECT
 						lasku.yhtio,
 						lasku.tunnus,
@@ -241,7 +305,7 @@ class Valmistus {
 					LEFT JOIN kalenteri ON (lasku.yhtio=kalenteri.yhtio AND lasku.tunnus=kalenteri.otunnus)
 					WHERE lasku.yhtio='{$kukarow['yhtio']}'
 					AND lasku.tila='V'
-					AND lasku.alatila=''";
+					AND lasku.alatila in ('', 'J')";
 		$result = pupe_query($query);
 
 		$valmistukset = array();
@@ -289,12 +353,10 @@ class Valmistus {
 						lasku.tunnus,
 						kalenteri.kentta01 as ylityotunnit,
 						kalenteri.kentta02 as kommentti
-
 					FROM lasku
 					LEFT JOIN kalenteri ON (lasku.yhtio=kalenteri.yhtio AND lasku.tunnus=kalenteri.otunnus)
 					WHERE lasku.yhtio='{$kukarow['yhtio']}'
 					AND lasku.tila='V'
-					AND lasku.alatila=''
 					AND lasku.valmistuksen_tila='VT'";
 
 		$result = pupe_query($query);

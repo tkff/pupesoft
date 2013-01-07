@@ -50,7 +50,9 @@ $(document).ready(function() {
 			color: '#060'
 		},
 		eventClick: function(event, jsEvent, view) {
-			show_popup(event, jsEvent);
+			if (event.tila !== 'VT') {
+				show_popup(event, jsEvent);
+			}
 		},
 		eventRender: function(event, element) {
 
@@ -64,8 +66,10 @@ $(document).ready(function() {
 				var title = event.tila + " " + event.title + event.kesto + "H";
 
 				// Lis‰t‰‰n tiedot eventtiin
-				$(element).children('.fc-event-inner').prepend('<span class="fc-event-next">' + next_link + '</span>');
-				$(element).children('.fc-event-inner').prepend('<span class="fc-event-prev">' + prev_link +'</span>');
+				if (event.tila !== 'VT') {
+					$(element).children('.fc-event-inner').prepend('<span class="fc-event-next">' + next_link + '</span>');
+					$(element).children('.fc-event-inner').prepend('<span class="fc-event-prev">' + prev_link +'</span>');
+				}
 				$(element).children('.fc-event-inner').children('.fc-event-title').html(title);
 			}
 

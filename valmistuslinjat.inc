@@ -193,7 +193,7 @@ function round_time($time, $seconds = 1800) {
 function laske_loppuaika($alkuaika, $minuutit = 0, $valmistuslinja) {
       global $kukarow;
 
-      echo "lasketaan loppuaika: $alkuaika, $minuutit, $valmistuslinja<br>";
+      #echo "lasketaan loppuaika: $alkuaika, $minuutit, $valmistuslinja<br>";
 
       // Pienin kalenterin yksikkˆ, 30 minuuttia
       if(!defined('INTERVALLI'))          define('INTERVALLI', 30);
@@ -278,6 +278,7 @@ function rebuild_valmistuslinjat($from = 'now') {
                         JOIN lasku ON (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
                         WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
                         AND henkilo='{$linja['selite']}'
+                        AND pvmloppu > '$from'
                         ORDER BY pvmalku";
             $result = pupe_query($query);
 
@@ -310,11 +311,12 @@ function rebuild_valmistuslinjat($from = 'now') {
                   // Siiret‰‰n vain valmistusta odottavia tai keskeytettyj‰ valmistuksia
                   if ($valmistus['valmistuksen_tila'] == 'OV' or $valmistus['valmistuksen_tila'] == 'TK') {
 
-                        #echo "tila ov, voidaan siirell‰<br>";
+                        echo "tila ov, voidaan siirell‰<br>";
                         // Jos tarkasteltavan valmistuksen pvmalku ei ole edellisen pvmloppu, eli
                         // valmistukset eiv‰t ole 'toisissaan kiinni', siirret‰‰n tarkasteltava
                         // edellisen loppuun.
-                        if ($valmistus['pvmalku'] != $edellinen_valmistus['pvmloppu'] and $valmistus['tunnus'] != $edellinen_valmistus['tunnus']) {
+                        if ($valmistus['pvmalku'] <> $edellinen_valmistus['pvmloppu'] and $valmistus['tunnus'] != $edellinen_valmistus['tunnus']) {
+                              echo "siirrell‰‰n!";
                               // Yhdistet‰‰n edellisen loppu t‰m‰n alkuun
                               $valmistus['pvmalku'] = $edellinen_valmistus['pvmloppu'];
 
@@ -341,7 +343,7 @@ function rebuild_valmistuslinjat($from = 'now') {
 }
 
 /**
-* Tarkistaa valmistuksen raaka-aineiden saldot
+* Tarkistaa valmistuksen raaka-aineiden saldot tiettyn‰ p‰iv‰n‰
 */
 function puuttuvat_raaka_aineet($tunnus, $aloitus_pvm = 'now') {
       global $kukarow;

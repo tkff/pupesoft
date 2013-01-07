@@ -136,6 +136,16 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 			$json['tila'] = $valmistus['valmistuksen_tila'];
 			$json['tyyppi'] = $valmistus['tyyppi'];
 
+			$puutteet = puuttuvat_raaka_aineet($valmistus['otunnus'], $valmistus['start']);
+
+			if (!empty($puutteet)) {
+				$json['color'] = '#833';
+			}
+
+			if ($valmistus['valmistuksen_tila'] == 'VT') {
+				$json['color'] = '#555';
+			}
+
 			$all_events[] = $json;
 		}
 	}

@@ -11,33 +11,6 @@ echo "<link rel='stylesheet' type='text/css' href='fullcalendar.css' />
 	<script type='text/javascript' src='valmistuslinjat.js'></script>";
 
 
-// Valmistuslinjojen info popup
-echo "<div id='bubble'>";
-echo "<div id='header'></div>";
-echo "<div id='content'></div>";
-echo "<form action='tuotannonsuunnittelu.php?method=update' method='post' id='toiminto' name='bubble'>
-		<input type='hidden' name='tunnus' id='valmistuksen_tunnus'>
-		<input type='hidden' name='tee' value='paivita'>
-		<select name='tila' onchange='submit()'>
-		<option value=''>Valitse</option>
-		<option value='OV'>Siirä parkkiin</option>
-		<option value='VA'>Aloita valmistus</option>
-		<option value='TK'>Keskeytä valmistus</option>
-		<option value='VT'>Valmis tarkistukseen</option>
-		</select>
-	</form>";
-echo "</div>";
-
-// html
-echo "<font class='head'>".t("Työjono työsuunnittelu")."</font><hr>";
-
-echo "<input type='hidden' id='yhtiorow' value='{$kukarow['yhtio']}'>";
-echo "<div id='calendar'></div>";
-
-echo "<br>";
-echo "<a href='tuotannonsuunnittelu.php?laske_kestot_uudelleen=true'>Laske valmistuslinjojen kestot uudelleen</a>";
-echo "<br>";
-
 // Jos $teetä ei ole
 if (!isset($tee)) $tee = '';
 
@@ -79,14 +52,70 @@ if (isset($method) and $method == 'move') {
 
 /** Valmistuksen tilan päivittäminen */
 if ($tee == 'paivita' and isset($method) and $method == 'update') {
-
 	$valmistus = Valmistus::find($tunnus);
 
-	// Yritetään vaihtaa valmistuksen tilaa
-	try {
-		$valmistus->setTila($tila);
-	} catch (Exception $e) {
-		echo "<font class='error'>Valmistuksen tilan muuttaminen epäonnistui. <br>{$e->getMessage()}</font>";
+	// Keskeytä työ (TK) ja Valmis tarkastukseen (VT) kysyy lisäformilla tiedot valmistuksesta
+	if ($tila == 'TK' or $tila == 'VT') {
+		$otsikko = ($tila=='TK') ? 'Keskeytä työ' : 'Valmista tarkastukseen';
+
+		echo "<font class='head'>$otsikko</font>";
+
+		echo "<form method='post'>";
+		echo "<input type='hidden' name='tunnus' value='$tunnus'>";
+		echo "<input type='hidden' name='tila' value='$tila'>";
+		echo "<input type='hidden' name='tee' value='paivita'>";
+		echo "<input type='hidden' name='varmistus' value='ok'>";
+
+		echo "<table>";
+
+		echo "<tr><th>Valmistus</th><td>{$valmistus->tunnus()}</td></tr>";
+
+		// Haetaan valmisteet
+		foreach($valmistus->tuotteet() as $valmiste) {
+			echo "<tr>
+				<th>Tuoteno</th>
+				<td>{$valmiste['tuoteno']}
+				</tr>";
+			echo "<tr>
+				<th>Valmistettava määrä</th>
+				<td><input type='text' name='valmisteet[{$valmiste['tunnus']}][maara]' value='{$valmiste['varattu']}'></td>
+				</tr>";
+			echo "<tr>
+				<th>Ylityötunnit</th>
+				<td><input type='text' name='valmisteet[{$valmiste['tunnus']}][tunnit]'></td>
+				</tr>";
+		}
+
+		echo "<tr><th>Kommentit</th><td><input type='text' name='kommentti'></td></tr>";
+		echo "</table>";
+
+		echo "<input type='submit' value='Valmis'>";
+		echo "</form>";
+	}
+	else {
+		// Muut tilat päivitetään suoraan
+		$varmistus = 'ok';
+	}
+
+	// Jos kaikki ok, päivitetään valmistus
+	if ($varmistus == 'ok') {
+		#echo "valmistus: $tunnus<br>";
+		#echo "kommentti: $kommentti<br>";
+
+		// Päivitetään valmisteet
+		foreach ($valmistus->tuotteet() as $valmiste) {
+			#echo "valmiste: {$valmiste['tunnus']} {$valmiste['varattu']} uudet: ";
+			#echo "maarat: " . $valmisteet[$valmiste['tunnus']]['maara'];
+			#echo "ylityot: " . $valmisteet[$valmiste['tunnus']]['tunnit'];
+		}
+
+		// Yritetään vaihtaa valmistuksen tilaa
+		try {
+			$valmistus->setTila($tila);
+			$tee = '';
+		} catch (Exception $e) {
+			echo "<font class='error'>Valmistuksen tilan muuttaminen epäonnistui. <br>{$e->getMessage()}</font>";
+		}
 	}
 }
 
@@ -95,6 +124,7 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 if ($tee == 'lisaa_tyojonoon') {
 	// Lisätään valmistus valmistuslinjalle
 	lisaa_valmistus($valmistus, $valmistuslinja);
+	$tee = '';
 }
 
 /** Päivitetään valmistuksen tila
@@ -118,7 +148,7 @@ if ($tee == 'paivita_tila') {
 
 	}
 	// Keskeytä työ
-	elseif ($tila == 'TK') {
+	elseif ($tila == 'TK' or $tila == 'VT') {
 
 		echo "<div class='info'>
 			<h3>Keskeytä työ</h3>
@@ -218,6 +248,8 @@ if ($tee == 'paivita_tila') {
 		echo $query;
 	}
 
+	$tee = '';
+
 	echo "<br>päivitetään valmistus: {$valmistus['tunnus']}<br>";
 	echo "tilaksi: {$tila}<br>";
 	var_dump($_POST);
@@ -256,126 +288,160 @@ if ($tee == 'lisaa_kalenteriin') {
 		#echo "alkuaika: ".date('Y-m-d H:i:s', $pvmalku).", loppuaika: ".date('Y-m-d H:i:s', $pvmloppu);
 	}
 }
-echo "<br>";
 
-/* PARKKI */
-echo "<br>";
-echo "<font class='head'>".t("Parkki")."</font>";
-echo "<hr>";
+if ($tee == '') {
 
-echo "<table border=1>";
-echo "<tr>";
-echo "<th>Valmistus</th>";
-echo "<th>Tila</th>";
-echo "<th>Nimitys</th>";
-echo "<th>Määrä</th>";
-echo "<th>Kesto (h)</th>";
-echo "<th></th>";
-echo "<th>Puutteet</th>";
-echo "</tr>";
+	// Valmistuslinjojen info popup
+	echo "<div id='bubble'>";
+	echo "<div id='header'></div>";
+	echo "<div id='content'></div>";
+	echo "<form action='tuotannonsuunnittelu.php?method=update' method='post' id='toiminto' name='bubble'>
+			<input type='hidden' name='tunnus' id='valmistuksen_tunnus'>
+			<input type='hidden' name='tee' value='paivita'>
+			<select name='tila' onchange='submit()'>
+			<option value=''>Valitse</option>
+			<option value='OV'>Siirä parkkiin</option>
+			<option value='VA'>Aloita valmistus</option>
+			<option value='TK'>Keskeytä valmistus</option>
+			<option value='VT'>Valmis tarkistukseen</option>
+			</select>
+		</form>";
+	echo "</div>";
 
-// Hetaan valmistuslinjat avainsanoista
-$linjat = hae_valmistuslinjat();
-// Haetaan valmistukset
-$valmistukset = Valmistus::all();
+	// html
+	echo "<font class='head'>".t("Työjono työsuunnittelu")."</font><hr>";
 
-//Listataan parkissa olevat valmistukset
-foreach($valmistukset as $valmistus) {
+	echo "<input type='hidden' id='yhtiorow' value='{$kukarow['yhtio']}'>";
+	echo "<div id='calendar'></div>";
+
+	echo "<br>";
+	echo "<a href='tuotannonsuunnittelu.php?laske_kestot_uudelleen=true'>Laske valmistuslinjojen kestot uudelleen</a>";
+	echo "<br>";
+
+	echo "<br>";
+
+	/* PARKKI */
+	echo "<br>";
+	echo "<font class='head'>".t("Parkki")."</font>";
+	echo "<hr>";
+
+	echo "<table border=1>";
 	echo "<tr>";
+	echo "<th>Valmistus</th>";
+	echo "<th>Tila</th>";
+	echo "<th>Nimitys</th>";
+	echo "<th>Määrä</th>";
+	echo "<th>Kesto (h)</th>";
+	echo "<th></th>";
+	echo "<th>Puutteet</th>";
+	echo "</tr>";
 
-	echo "<td>" . $valmistus->tunnus() . "</td>";
-	echo "<td>" . $valmistus->getTila() . "</td>";
-	echo "<td>";
-	// Valmistuksella olevat tuotteet
-	$kpl = '';
-	foreach($valmistus->tuotteet() as $tuote) {
-		echo $tuote['tuoteno'] . " "
-			. $tuote['nimitys'] . "<br>";
-		$kpl .= $tuote['varattu'] . " " . $tuote['yksikko'] . "<br>";
-	}
+	// Hetaan valmistuslinjat avainsanoista
+	$linjat = hae_valmistuslinjat();
+	// Haetaan valmistukset
+	$valmistukset = Valmistus::all();
 
-	echo "</td>";
+	//Listataan parkissa olevat valmistukset
+	foreach($valmistukset as $valmistus) {
+		echo "<tr>";
 
-	echo "<td>$kpl</td>";
-
-	echo "<td>" . $valmistus->kesto() . "</td>";
-
-	echo "<td>";
-	// Valmistuslinjan valintalaatikko
-	if ($valmistus->valmistuslinja() == NULL) {
-		echo "<form method='post' name='lisaa_tyojonoon'>";
-		echo "<input type='hidden' name='tee' value='lisaa_tyojonoon'>";
-		echo "<input type='hidden' name='valmistus' value='{$valmistus->tunnus()}'>";
-		echo "<select name='valmistuslinja'>";
-		echo "<option value=''>Valitse linja</option>";
-
-		foreach($linjat as $linja) {
-			echo "<option value='$linja[selite]'>$linja[selitetark]</option>";
+		echo "<td>" . $valmistus->tunnus() . "</td>";
+		echo "<td>" . $valmistus->getTila() . "</td>";
+		echo "<td>";
+		// Valmistuksella olevat tuotteet
+		$kpl = '';
+		foreach($valmistus->tuotteet() as $tuote) {
+			echo $tuote['tuoteno'] . " "
+				. $tuote['nimitys'] . "<br>";
+			$kpl .= $tuote['varattu'] . " " . $tuote['yksikko'] . "<br>";
 		}
 
-		echo "</select>";
-		echo "<input type='submit' value='".t("Aloita valmistus")."'>";
-		echo "</form>";
+		echo "</td>";
+
+		echo "<td>$kpl</td>";
+
+		echo "<td>" . $valmistus->kesto() . "</td>";
+
+		echo "<td>";
+		// Valmistuslinjan valintalaatikko
+		if ($valmistus->valmistuslinja() == NULL) {
+			echo "<form method='post' name='lisaa_tyojonoon'>";
+			echo "<input type='hidden' name='tee' value='lisaa_tyojonoon'>";
+			echo "<input type='hidden' name='valmistus' value='{$valmistus->tunnus()}'>";
+			echo "<select name='valmistuslinja'>";
+			echo "<option value=''>Valitse linja</option>";
+
+			foreach($linjat as $linja) {
+				echo "<option value='$linja[selite]'>$linja[selitetark]</option>";
+			}
+
+			echo "</select>";
+			echo "<input type='submit' value='".t("Aloita valmistus")."'>";
+			echo "</form>";
+		}
+		else {
+			echo $valmistus->alkupvm() . " - " . $valmistus->loppupvm();
+		}
+		echo "</td>";
+
+		echo "<td>";
+		foreach($valmistus->puutteet() as $tuoteno => $maara) {
+			echo "tuoteno: $tuoteno saldo: $maara<br>";
+		}
+		echo "</td>";
+
+		echo "</tr>";
 	}
-	else {
-		echo $valmistus->alkupvm() . " - " . $valmistus->loppupvm();
+
+	echo "</table>";
+
+	/* MUUT */
+	echo "<br>";
+	echo "<font class='head'>" . t("Muut") . "</font>";
+	echo "<hr>";
+
+	echo "<form method='POST'>";
+	echo "<input type='hidden' name='tee' value='lisaa_kalenteriin'>";
+	echo "<table>";
+	echo "<tr>";
+	echo "<th>Valmistuslinja:</th>";
+	echo "<td>";
+	echo "<select name='valmistuslinja'>";
+	echo "<option value=''>Yhtiökohtainen</option>";
+
+	foreach($linjat as $linja) {
+		echo "<option value='$linja[selite]'>$linja[selitetark]</option>";
 	}
+
+	echo "</select>";
 	echo "</td>";
-
-	echo "<td>" . $valmistus->puutteet() . "</td>";
-
 	echo "</tr>";
+	echo "<tr>";
+	echo "<th>Tyyppi:</th>";
+	echo "<td>";
+	echo "<select name='tyyppi'>";
+	echo "<option value='PE'>Pekkaspäivä</option>";
+	echo "<option value='SA'>Sairasloma</option>";
+	echo "<option value='MT'>Muu työ</option>";
+	echo "<option value='LO'>Loma</option>";
+	echo "<option value='PY'>Pyhä (yhtiökohtainen)</option>";
+	echo "<option value='PO'>Vapaa/Poissa</option>";
+	echo "</select>";
+	echo "</td>";
+	echo "</tr>";
+	echo "<tr>";
+	echo "<th>Alkuaika:</th>";
+	echo "<td><input type='text' name='pvmalku'></td><td class='back'>dd.mm.yy</td>";
+	echo "</tr></tr>";
+	echo "<th>Loppuaika:</th>";
+	echo "<td><input type='text' name='pvmloppu'></td><td class='back'>dd.mm.yyyy (Oletuksena päivän loppuun 23:59)</td>";
+	echo "</tr>";
+	echo "<tr>";
+	echo "<td><input type='submit' value='Valmis'></td>";
+	echo "</tr>";
+	echo "<table>";
+	echo "</form>";
 }
-
-echo "</table>";
-
-/* MUUT */
-echo "<br>";
-echo "<font class='head'>" . t("Muut") . "</font>";
-echo "<hr>";
-
-echo "<form method='POST'>";
-echo "<input type='hidden' name='tee' value='lisaa_kalenteriin'>";
-echo "<table>";
-echo "<tr>";
-echo "<th>Valmistuslinja:</th>";
-echo "<td>";
-echo "<select name='valmistuslinja'>";
-echo "<option value=''>Yhtiökohtainen</option>";
-
-foreach($linjat as $linja) {
-	echo "<option value='$linja[selite]'>$linja[selitetark]</option>";
-}
-
-echo "</select>";
-echo "</td>";
-echo "</tr>";
-echo "<tr>";
-echo "<th>Tyyppi:</th>";
-echo "<td>";
-echo "<select name='tyyppi'>";
-echo "<option value='PE'>Pekkaspäivä</option>";
-echo "<option value='SA'>Sairasloma</option>";
-echo "<option value='MT'>Muu työ</option>";
-echo "<option value='LO'>Loma</option>";
-echo "<option value='PY'>Pyhä (yhtiökohtainen)</option>";
-echo "<option value='PO'>Vapaa/Poissa</option>";
-echo "</select>";
-echo "</td>";
-echo "</tr>";
-echo "<tr>";
-echo "<th>Alkuaika:</th>";
-echo "<td><input type='text' name='pvmalku'></td><td class='back'>dd.mm.yy</td>";
-echo "</tr></tr>";
-echo "<th>Loppuaika:</th>";
-echo "<td><input type='text' name='pvmloppu'></td><td class='back'>dd.mm.yyyy (Oletuksena päivän loppuun 23:59)</td>";
-echo "</tr>";
-echo "<tr>";
-echo "<td><input type='submit' value='Valmis'></td>";
-echo "</tr>";
-echo "<table>";
-echo "</form>";
-
 
 // FOOTER
 require ("inc/footer.inc");
