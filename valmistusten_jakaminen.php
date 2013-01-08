@@ -38,7 +38,6 @@ foreach($valmistukset as $valmistus) {
 				<th>Varattu</th>
 				<th>Valmistettu</th>
 			</tr>";
-		echo "<tr><td>" . $valmistus->tunnus() . "</td></tr>";
 
 		echo "<form method='POST'>";
 		echo "<input type='hidden' name='tee' value='jaa_valmistus'>";
@@ -53,7 +52,7 @@ foreach($valmistukset as $valmistus) {
 			echo "<td><input type='text' size='8' name='jaettavat_valmisteet[{$valmiste['tunnus']}]' value='" . $valmiste['varattu'] . "'></td>";
 			echo "</tr>";
 		}
-		echo "<tr><td><input type='submit' value='Jaa'></td></tr>";
+		echo "<tr><td colspan='4'><input type='submit' value='Jaa'></td></tr>";
 		echo "</form>";
 		echo "</table>";
 	}

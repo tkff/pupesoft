@@ -144,7 +144,10 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 
 			if ($valmistus['valmistuksen_tila'] == 'VT') {
 				$json['color'] = '#555';
+			} else if ($valmistus['valmistuksen_tila'] == 'VA') {
+				$json['color'] = '#494';
 			}
+
 
 			$all_events[] = $json;
 		}

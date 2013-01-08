@@ -262,7 +262,7 @@ function rebuild_valmistuslinjat($from = 'now') {
       global $kukarow;
 
       $from = date('Y-m-d H:i:s', strtotime($from));
-      echo "rakennetaan valmistuslinja uudelleen alkaen: $from <br>";
+     # echo "rakennetaan valmistuslinja uudelleen alkaen: $from <br>";
 
       // Hetaan kaikki valmistuslinjat
       $query = "SELECT selite FROM avainsana WHERE yhtio='{$kukarow['yhtio']}' AND laji='VALMISTUSLINJA' ORDER BY selite";
@@ -270,7 +270,7 @@ function rebuild_valmistuslinjat($from = 'now') {
 
       // J‰rjestell‰‰n linja kerrallaan
       while($linja = mysql_fetch_assoc($valmistuslinjat_result)) {
-            echo "j‰rjestell‰‰n linja $linja[selite]<br>";
+           # echo "j‰rjestell‰‰n linja $linja[selite]<br>";
 
             // Haetaan kaikki linjan valmistukset
             $query = "SELECT *, kalenteri.tunnus as tunnus
@@ -298,7 +298,7 @@ function rebuild_valmistuslinjat($from = 'now') {
 
             // Loopataan valmistukset l‰pi ja j‰rjestell‰‰n
             foreach($valmistukset as $valmistus) {
-                  echo "valmistus: $valmistus[tunnus]<br>";
+                  #echo "valmistus: $valmistus[tunnus]<br>";
 
                   // Ei siirret‰ ensimm‰ist‰
                   if ($edellinen_valmistus == '') {
@@ -306,17 +306,15 @@ function rebuild_valmistuslinjat($from = 'now') {
                         continue;
                   }
 
-                  #echo "edellinen_valmistus :$edellinen_valmistus[tunnus]<br>";
-
                   // Siiret‰‰n vain valmistusta odottavia tai keskeytettyj‰ valmistuksia
                   if ($valmistus['valmistuksen_tila'] == 'OV' or $valmistus['valmistuksen_tila'] == 'TK') {
 
-                        echo "tila ov, voidaan siirell‰<br>";
+                        #echo "tila ov, voidaan siirell‰<br>";
                         // Jos tarkasteltavan valmistuksen pvmalku ei ole edellisen pvmloppu, eli
                         // valmistukset eiv‰t ole 'toisissaan kiinni', siirret‰‰n tarkasteltava
                         // edellisen loppuun.
                         if ($valmistus['pvmalku'] <> $edellinen_valmistus['pvmloppu'] and $valmistus['tunnus'] != $edellinen_valmistus['tunnus']) {
-                              echo "siirrell‰‰n!";
+                              #echo "siirrell‰‰n!";
                               // Yhdistet‰‰n edellisen loppu t‰m‰n alkuun
                               $valmistus['pvmalku'] = $edellinen_valmistus['pvmloppu'];
 
@@ -580,10 +578,10 @@ function jaa_valmistus($tunnus, $params) {
 
       // Haetaan kaikki valmistuksen valmisteet (tyypit 'W' tai 'M')
       $valmisteet_query = "SELECT *
-                                          FROM tilausrivi
-                                          WHERE yhtio='{$kukarow['yhtio']}'
-                                          AND otunnus=$tunnus
-                                          AND tyyppi in ('W', 'M')";
+                              FROM tilausrivi
+                              WHERE yhtio='{$kukarow['yhtio']}'
+                              AND otunnus=$tunnus
+                              AND tyyppi in ('W', 'M')";
       $valmisteet_result = pupe_query($valmisteet_query);
 
       // Loopataan valmisteet
@@ -617,8 +615,8 @@ function jaa_valmistus($tunnus, $params) {
 
                         // Luodaan otsikon kopio
                         $copy_query = "INSERT INTO
-                                                lasku (".implode(", ", array_keys($copy)).")
-                                                VALUES('".implode("', '", array_values($copy)). "')";
+                                          lasku (".implode(", ", array_keys($copy)).")
+                                          VALUES('".implode("', '", array_values($copy)). "')";
 
                         if (!pupe_query($copy_query)) {
                               exit("Virhe laskun kopioinnissa, uutta laskua ei luotu");
@@ -634,18 +632,18 @@ function jaa_valmistus($tunnus, $params) {
 
                   // P‰ivitet‰‰n alkuper‰inen valmiste
                   $query = "UPDATE tilausrivi
-                                    SET varattu=$original_kpl
-                                    WHERE yhtio='{$kukarow['yhtio']}'
-                                    AND tunnus={$valmiste['tunnus']}";
+                              SET varattu=$original_kpl
+                              WHERE yhtio='{$kukarow['yhtio']}'
+                              AND tunnus={$valmiste['tunnus']}";
                   pupe_query($query);
 
                   // Loopataan raaka-aineet
                   $raaka_aine_query = "SELECT *
-                                                      FROM tilausrivi
-                                                      WHERE yhtio='{$kukarow['yhtio']}'
-                                                      AND otunnus={$valmiste['otunnus']}
-                                                      AND perheid={$valmiste['perheid']}
-                                                      AND tyyppi='V'";
+                                          FROM tilausrivi
+                                          WHERE yhtio='{$kukarow['yhtio']}'
+                                          AND otunnus={$valmiste['otunnus']}
+                                          AND perheid={$valmiste['perheid']}
+                                          AND tyyppi='V'";
                   $raaka_aine_result = pupe_query($raaka_aine_query);
 
                   // Loopataan valmisteen raaka-aineet
