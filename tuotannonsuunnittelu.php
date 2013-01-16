@@ -115,7 +115,8 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 			$valmistus->setTila($tila);
 			$tee = '';
 		} catch (Exception $e) {
-			echo "<font class='error'>Valmistuksen tilan muuttaminen epäonnistui. <br>{$e->getMessage()}</font>";
+			$errors .= "<font class='error'>Valmistuksen tilan muuttaminen epäonnistui. <br>{$e->getMessage()}</font>";
+			$tee = '';
 		}
 	}
 
@@ -196,7 +197,7 @@ if ($tee == 'paivita_tila') {
 
 		// Jos linjalla on jo valmistus kesken
 		if (mysql_num_rows($result) > 0) {
-			echo "<font class='error'>Valmistuslinjalla on jo työ valmistuksessa.</font>";
+			$errors .= "<font class='error'>Valmistuslinjalla on jo työ valmistuksessa.</font>";
 		}
 		else {
 			// Pitää järjestellä uusiks
@@ -266,7 +267,7 @@ if ($tee == 'lisaa_kalenteriin') {
 
 	// Alkuaika on pakko syöttää
 	if (empty($pvmalku)) {
-		echo "<font class='error'>".t("Alkuaika ei voi olla tyhjä")."</font>";
+		$errors .= "<font class='error'>".t("Alkuaika ei voi olla tyhjä")."</font>";
 	}
 	else {
 		$pvmalku = strtotime($pvmalku);
@@ -286,7 +287,7 @@ if ($tee == 'lisaa_kalenteriin') {
 			pupe_query($query);
 		}
 		else {
-			echo "<font class='error'>".t("Loppuajan on oltava suurempi kuin alkuajan")."</font>";
+			$errors .= "<font class='error'>".t("Loppuajan on oltava suurempi kuin alkuajan")."</font>";
 		}
 
 		#echo "alkuaika: ".date('Y-m-d H:i:s', $pvmalku).", loppuaika: ".date('Y-m-d H:i:s', $pvmloppu);
@@ -324,6 +325,11 @@ if ($tee == '') {
 	echo "<br>";
 	echo "<a href='tuotannonsuunnittelu.php?laske_kestot_uudelleen=true'>Laske valmistuslinjojen kestot uudelleen</a>";
 	echo "<br>";
+
+	// Virheilmoitukset
+	if (!empty($errors)) {
+		echo $errors;
+	}
 
 	echo "<br>";
 
