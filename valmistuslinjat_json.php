@@ -53,6 +53,7 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 	$result = pupe_query($query);
 
 	$yhtiokohtaiset_tapahtumat = array();
+
 	// Lomat ja muut yhtiökohtaiset merkinnät
 	while ($pyha = mysql_fetch_assoc($result)) {
 		$yhtiokohtaiset_tapahtumat[] = $pyha;
@@ -70,7 +71,7 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 			$json['allDay'] = false;
 			$json['resource'] = $linja['id'];
 			$json['color'] 	= '#666';
-			$all_events[] 	= $json;
+			$all_events[] 		= $json;
 		}
 
 		// Haetaan ja lisätään henkilökohtaiset tapahtumat

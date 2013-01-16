@@ -207,14 +207,16 @@ function laske_loppuaika($alkuaika, $minuutit = 0, $valmistuslinja) {
 
       #echo "kesto: ". $minuutit/60 ." aloitetaan lisäämään alkuajasta (alkuaika: ".date('Y-m-d H:i:s', $alkuaika)."): ".date('Y-m-d H:i:s', $loppuaika)."<br>";
 
-      // Haetaan yhtiökohtaiset erikoispäivät
+      // Haetaan kalenteriin merkatut erikoispäivät
+      // Yhtiökohtaiset ('PY')
+      // Henkilökohtaiset ('SA', 'PO', 'PE', 'MT', 'LO')
       $lomat = array();
 
       $query = "SELECT pvmalku, pvmloppu
                   FROM kalenteri
                   WHERE yhtio='{$kukarow['yhtio']}'
                   AND tyyppi='PY'
-                  OR (tyyppi IN ('SA', 'PO') AND henkilo={$valmistuslinja})
+                  OR (tyyppi IN ('SA', 'PO', 'PE', 'MT', 'LO') AND henkilo={$valmistuslinja})
                   ORDER BY pvmalku;";
       $result = pupe_query($query);
 

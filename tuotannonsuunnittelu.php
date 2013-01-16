@@ -55,10 +55,10 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 	$valmistus = Valmistus::find($tunnus);
 
 	// Keskeytä työ (TK) ja Valmis tarkastukseen (VT) kysyy lisäformilla tiedot valmistuksesta
-	if ($tila == 'TK' or $tila == 'VT') {
+	if (!isset($varmistus) and ($tila == 'TK' or $tila == 'VT')) {
 		$otsikko = ($tila=='TK') ? 'Keskeytä työ' : 'Valmista tarkastukseen';
 
-		echo "<font class='head'>$otsikko</font>";
+		echo "<font class='head'>" . t($otsikko) . "</font>";
 
 		echo "<form method='post'>";
 		echo "<input type='hidden' name='tunnus' value='$tunnus'>";
@@ -89,6 +89,7 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 		echo "<tr><th>Kommentit</th><td><input type='text' name='kommentti'></td></tr>";
 		echo "</table>";
 
+		echo "<a href='tuotannonsuunnittelu.php'>Takaisin</a>";
 		echo "<input type='submit' value='Valmis'>";
 		echo "</form>";
 	}
@@ -117,6 +118,9 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 			echo "<font class='error'>Valmistuksen tilan muuttaminen epäonnistui. <br>{$e->getMessage()}</font>";
 		}
 	}
+
+	rebuild_valmistuslinjat();
+
 }
 
 /** Lisätään valmistus valmistusjonoon

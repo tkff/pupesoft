@@ -50,8 +50,8 @@ $(document).ready(function() {
 			color: '#060'
 		},
 		eventClick: function(event, jsEvent, view) {
-			if (event.tila !== 'VT') {
-				show_popup(event, jsEvent);
+			if (event.tyyppi === 'valmistus') {
+				show_details(event, jsEvent);
 			}
 		},
 		eventRender: function(event, element) {
@@ -70,9 +70,10 @@ $(document).ready(function() {
 					$(element).children('.fc-event-inner').prepend('<span class="fc-event-next">' + next_link + '</span>');
 					$(element).children('.fc-event-inner').prepend('<span class="fc-event-prev">' + prev_link +'</span>');
 				}
+				// Otsikko
 				$(element).children('.fc-event-inner').children('.fc-event-title').html(title);
 			}
-
+			// alku- ja loppuaika
 			$(element).children('.fc-event-inner').children('.fc-event-time').html(parse_date(event.start) + " - " + parse_date(event.end));
 		}
 	});
@@ -83,7 +84,7 @@ $(document).ready(function() {
 });
 
 
-function show_popup(event, jsEvent) {
+function show_details(event, jsEvent) {
 	// Info laatikko
 	$('#bubble').css('top', jsEvent.pageY);
 	$('#bubble').css('left', jsEvent.pageX);
