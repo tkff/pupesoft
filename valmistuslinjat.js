@@ -77,7 +77,7 @@ $(document).ready(function() {
 		}
 	});
 
-	$('#bubble').click(function() {
+	$('#close_bubble').click(function() {
 		$('#bubble').fadeOut('fast');
 	});
 });

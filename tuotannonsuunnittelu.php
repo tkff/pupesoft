@@ -257,7 +257,7 @@ if ($tee == 'paivita_tila') {
 
 if ($tee == 'lisaa_kalenteriin') {
 
-	// Loppaika timestampiksi
+	// Loppuaika timestampiksi
 	if (!empty($pvmloppu)) $pvmloppu = strtotime($pvmloppu);
 
 	// Alkuaika on pakko syöttää
@@ -286,6 +286,8 @@ if ($tee == 'lisaa_kalenteriin') {
 		}
 
 		#echo "alkuaika: ".date('Y-m-d H:i:s', $pvmalku).", loppuaika: ".date('Y-m-d H:i:s', $pvmloppu);
+
+		$tee = '';
 	}
 }
 
@@ -306,6 +308,7 @@ if ($tee == '') {
 			<option value='VT'>Valmis tarkistukseen</option>
 			</select>
 		</form>";
+	echo "<br><a href='#' id='close_bubble'>sulje</a>";
 	echo "</div>";
 
 	// html
@@ -385,9 +388,9 @@ if ($tee == '') {
 		echo "</td>";
 
 		echo "<td>";
-		foreach($valmistus->puutteet() as $tuoteno => $maara) {
-			echo "tuoteno: $tuoteno saldo: $maara<br>";
-		}
+		// foreach($valmistus->puutteet() as $tuoteno => $maara) {
+		// 	echo "tuoteno: $tuoteno saldo: $maara<br>";
+		// }
 		echo "</td>";
 
 		echo "</tr>";
@@ -431,10 +434,10 @@ if ($tee == '') {
 	echo "</tr>";
 	echo "<tr>";
 	echo "<th>Alkuaika:</th>";
-	echo "<td><input type='text' name='pvmalku'></td><td class='back'>dd.mm.yy</td>";
+	echo "<td><input type='text' name='pvmalku' value='" . date('d.m.Y'). " 08:00'></td><td class='back'>pp.kk.vvvv hh:mm</td>";
 	echo "</tr></tr>";
 	echo "<th>Loppuaika:</th>";
-	echo "<td><input type='text' name='pvmloppu'></td><td class='back'>dd.mm.yyyy (Oletuksena päivän loppuun 23:59)</td>";
+	echo "<td><input type='text' name='pvmloppu' value='" . date('d.m.Y'). " 16:00'></td><td class='back'>pp.kk.vvvv hh:mm</td>";
 	echo "</tr>";
 	echo "<tr>";
 	echo "<td><input type='submit' value='Valmis'></td>";
