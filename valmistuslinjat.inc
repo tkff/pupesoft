@@ -75,16 +75,9 @@ function hae_valmistus($tunnus) {
       return $valmistus;
 }
 
-function valmistuksen_tuotteen_kesto($tuote) {
-      global $kukarow;
-
-      $query = "SELECT sum(varattu) as kesto FROM tilausrivi WHERE yhtio='{$kukarow['yhtio']}' and otunnus={$valmistus['otunnus']} and yksikko='H'";
-      $result = pupe_query($query);
-      $kesto = mysql_fetch_assoc($result);
-
-      return $kesto['kesto'];
-}
-
+/**
+ * Lisää valmistuksen halutulle valmistuslinjalle
+ */
 function lisaa_valmistus($valmistus, $linja) {
       global $kukarow;
 
@@ -197,8 +190,8 @@ function laske_loppuaika($alkuaika, $minuutit = 0, $valmistuslinja) {
 
       // Pienin kalenterin yksikkö, 30 minuuttia
       if(!defined('INTERVALLI'))          define('INTERVALLI', 30);
-      if(!defined('TYOPAIVAN_ALKU'))      define('TYOPAIVAN_ALKU', '07:00');
-      if(!defined('TYOPAIVAN_LOPPU'))     define('TYOPAIVAN_LOPPU', '15:00');
+      if(!defined('TYOPAIVAN_ALKU'))      define('TYOPAIVAN_ALKU', '08:00');
+      if(!defined('TYOPAIVAN_LOPPU'))     define('TYOPAIVAN_LOPPU', '16:00');
 
       if ($minuutit == 0) $minuutit = 60;
 
