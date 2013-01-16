@@ -5,8 +5,17 @@ require 'inc/parametrit.inc';
 require 'valmistuslinjat.inc';
 require 'valmistus.class.php';
 
+// Yhtiˆnparametri pit‰‰ olla setattu jotta t‰t‰ toimminallisuutta voidaan k‰ytt‰‰
+if ($yhtiorow['valmistuksessa_kaytetaan_tilakoodeja'] != 'K') {
+	exit("Valmistuslinjojen tyˆjonot toiminta vaatii yhtiˆnparametrin valmistuksessa k‰ytet‰‰n tilakoodeja");
+}
+
 $title = array('VT' => 'Valmista tarkastukseen', 'TK' => 'Keskeyt‰ tyˆ');
 
+/**
+ * N‰ytet‰‰n lomake valmistuksen tilan vaihdossa
+ *
+ */
 if (isset($tee) and $tee == 'verify') {
 	// Haetaan aina valmistus
 	$valmistus = Valmistus::find($tunnus);
@@ -15,12 +24,15 @@ if (isset($tee) and $tee == 'verify') {
 	// Formilla kysyt‰‰n valmistettu m‰‰r‰ ja kommentit
 	if ($tila == Valmistus::VALMIS_TARKASTUKSEEN or $tila == Valmistus::KESKEYTETTY) {
 		$title = $title[$tila];
-		include 'views/valmistus/edit.php';
+		include '_valmistus_edit.php';
 	} else {
 		$tee = 'update';
 	}
 }
 
+/**
+ * Jos tullaan lomaakkeelta, p‰ivitet‰‰n valmistuksen tiedot
+ */
 if (isset($tee) and $tee == 'update') {
 
 	// Haetaan aina valmistus
@@ -51,7 +63,7 @@ if (isset($tee) and $tee == 'update') {
 				}
 				// M‰‰r‰ on sama (valmistus on valmistettu kokonaan)
 				else if ($maara == $valmiste['varattu']) {
-					echo "m‰‰r‰ sama! p‰ivitet‰‰n vaan tila ja lis‰t‰‰n kommentit";
+					#echo "m‰‰r‰ sama! p‰ivitet‰‰n vaan tila ja lis‰t‰‰n kommentit";
 
 				}
 				// Virhe
@@ -69,100 +81,6 @@ if (isset($tee) and $tee == 'update') {
 
 	// Palataan tyˆjono n‰kym‰‰n
 	$tee = '';
-
-}
-
-if (isset($tee) and $tee == 'paivita_tila') {
-
-	// // Otsikko formille
-	// $title = "Valmista tarkastukseen";
-
-	// // Haetaan valmistus
-	// $valmistus = Valmistus::find($tunnus);
-
-	// $action = '';
-	// include 'views/valmistus/edit.php';
-	// exit();
-
-	// // Jos tila muutetaan valmis tarkastukseen, keskeytetty tai osavalmistus tulee k‰yt‰t‰j‰n
-	// // syˆtt‰‰ lis‰tietoja
-	// if ($tila == 'VT' or $tila == 'TK') {
-	// 	echo "<div class='info'>
-	// 		<font class='head'>" . t($title[$tila]) . "</font>
-	// 		<form method='post'>
-	// 			<input type='hidden' name='tee' value='paivita_tila'>
-	// 			<input type='hidden' name='tila' value='{$tila}'>
-	// 			<input type='hidden' name='paivita' value='true'>
-	// 			<input type='hidden' name='tunnus' value='{$valmistus->tunnus()}'>
-	// 			<table>
-	// 			<tr>
-	// 				<th>Valmistus</th>
-	// 				<th>M‰‰r‰</th>
-	// 				<th>Ylityˆtunnit</th>
-	// 				<th>Kommentti</th>
-	// 			</tr>";
-
-	// 			foreach($valmistus->tuotteet() as $tuote) {
-	// 				echo "<tr>";
-	// 				echo "<td>" . $tuote['nimitys'] . " " . $tuote['varattu'] . " " . $tuote['yksikko'] . "</td>";
-	// 				echo "<td><input size=6 type='text' name='jaettavat_valmisteet[{$tuote[tunnus]}]' value='{$tuote['varattu']}'></td>";
-	// 				echo "<td><input size=6 type='text' name='ylityotunnit[{$tuote[tunnus]}]' value=''></td>";
-	// 				echo "<td><input size=20 type='text' name='kommentit[{$tuote[tunnus]}]' value=''></td>";
-	// 				echo "</tr>";
-	// 			}
-
-	// 	echo 	"<tr>
-	// 				<td colspan=4 align='right'>
-	// 					<a href='valmistuslinjojen_tyojonot.php'>Takaisin</a>
-	// 					<input type='submit' value='Valmis'>
-	// 				</td>
-	// 			</tr>
-	// 			</table>
-	// 		</form>
-	// 	</div>";
-	// }
-
-	// P‰ivitet‰‰n valmistus, Valmis Tarkastukseen tai Tyˆ Keskeytetty
-	if ($paivita == true and ($tila == 'VT' or $tila == 'TK')) {
-		echo "p‰ivitet‰‰n valmistus<br>";
-
-		// Loopataan valmistuksen valmisteet l‰pi
-		foreach($valmistus->tuotteet() as $valmiste) {
-
-			// Tarvitseeko valmistus splitata, eli j‰ikˆ jotain valmistamatta?
-			if ($jaettavat_valmisteet[$valmiste['tunnus']] >= 0 AND $jaettavat_valmisteet[$valmiste['tunnus']] < $valmiste['varattu']) {
-				echo "splitataan valmistus: jaa_valmistus({$valmiste['tunnus']}, $jaettavat_valmisteet)";
-
-				try {
-					$uusi_valmistus = jaa_valmistus($valmistus->tunnus(), $jaettavat_valmisteet);
-				} catch (Exception $e) {
-					echo "Virhe, ". $e->getMessage();
-				}
-			}
-			// Ei splitata splitata jos syˆtetty m‰‰r‰ on sama kuin valmisteen
-			elseif ($jaettavat_valmisteet[$valmiste['tunnus']] == $valmiste['varattu']) {
-				echo "$valmiste[nimitys] $valmiste[varattu] $valmiste[yksikko] " . $jaettavat_valmisteet[$valmiste[tunnus]] . "<br>";
-
-			}
-			// Ei voi valmistaa enemm‰n kuin on tilattu
-			else {
-				echo "et voi valmistaa enemm‰n kuin on tilattu";
-			}
-
-			// Merkataan alkuper‰inen valmiiksi tai keskeytetyksi
-			$valmistus->setTila($tila);
-
-			// Ylityˆtunnit ja kommentit kalenteri tauluun
-			$ylityo = $ylityotunnit[$valmiste['tunnus']];
-			$kommentti = $kommentit[$valmiste['tunnus']];
-
-			$query = "UPDATE kalenteri SET kentta01='{$ylityo}', kentta02='{$kommentti}' WHERE yhtio='{$kukarow['yhtio']}' AND otunnus={$valmistus->tunnus()}";
-			pupe_query($query);
-		}
-
-		echo "valmistus p‰ivitetty<br>";
-		if (isset($uusi_valmistus)) echo "valmistus splitattu, uuden id: $uusi_valmistus<br>";
-	}
 }
 
 if ($tee == '') {
@@ -240,7 +158,6 @@ if ($tee == '') {
 
 				echo "</form>";
 				echo "</td>";
-
 				echo "</tr>";
 			}
 			echo "</table>";
