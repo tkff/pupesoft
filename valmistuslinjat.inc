@@ -230,7 +230,7 @@ function laske_loppuaika($alkuaika, $minuutit = 0, $valmistuslinja) {
 
             // Jos ollaan lomalla
             foreach ($lomat as $loma) {
-                  if (date('Y-m-d H:i:s', $loppuaika) >= $loma['pvmalku'] and date('Y-m-d H:i:s', $loppuaika) <= $loma['pvmloppu']) {
+                  if (date('Y-m-d H:i:s', $loppuaika) >= $loma['pvmalku'] and date('Y-m-d H:i:s', $loppuaika) < $loma['pvmloppu']) {
                         #echo "lomaa: " . date('H:i d.m.Y', $loppuaika) . "<br>";
                         $tyoaikaa = false;
                   }
@@ -256,7 +256,7 @@ function laske_loppuaika($alkuaika, $minuutit = 0, $valmistuslinja) {
 function rebuild_valmistuslinjat($from = 'now') {
       global $kukarow;
 
-      $from = date('Y-m-d H:i:s', strtotime($from));
+      $from = date('Y-m-d', strtotime($from));
      # echo "rakennetaan valmistuslinja uudelleen alkaen: $from <br>";
 
       // Hetaan kaikki valmistuslinjat
@@ -265,7 +265,6 @@ function rebuild_valmistuslinjat($from = 'now') {
 
       // J‰rjestell‰‰n linja kerrallaan
       while($linja = mysql_fetch_assoc($valmistuslinjat_result)) {
-           # echo "j‰rjestell‰‰n linja $linja[selite]<br>";
 
             // Haetaan kaikki linjan valmistukset
             $query = "SELECT *, kalenteri.tunnus as tunnus
@@ -289,48 +288,45 @@ function rebuild_valmistuslinjat($from = 'now') {
                   }
             }
 
-            $edellinen_valmistus = '';
+            // Valmistusten k‰sittely
+            $previous = '';
+            $current = '';
 
             // Loopataan valmistukset l‰pi ja j‰rjestell‰‰n
             foreach($valmistukset as $valmistus) {
-                  #echo "valmistus: $valmistus[tunnus]<br>";
+                  $current = $valmistus;
 
-                  // Ei siirret‰ ensimm‰ist‰
-                  if ($edellinen_valmistus == '') {
-                        $edellinen_valmistus = $valmistus;
-                        continue;
+                  // Jos tila on VA tai VT
+                  if ($current['valmistuksen_tila'] == 'VA' or $current['valmistuksen_tila'] == 'VT') {
+                        // Ei saa siirt‰‰ (ei kosketa alkupvm)
                   }
-
-                  // Siiret‰‰n vain valmistusta odottavia tai keskeytettyj‰ valmistuksia
-                  if ($valmistus['valmistuksen_tila'] == 'OV' or $valmistus['valmistuksen_tila'] == 'TK') {
-
-                        #echo "tila ov, voidaan siirell‰<br>";
-                        // Jos tarkasteltavan valmistuksen pvmalku ei ole edellisen pvmloppu, eli
-                        // valmistukset eiv‰t ole 'toisissaan kiinni', siirret‰‰n tarkasteltava
-                        // edellisen loppuun.
-                        if ($valmistus['pvmalku'] <> $edellinen_valmistus['pvmloppu'] and $valmistus['tunnus'] != $edellinen_valmistus['tunnus']) {
-                              #echo "siirrell‰‰n!";
-                              // Yhdistet‰‰n edellisen loppu t‰m‰n alkuun
-                              $valmistus['pvmalku'] = $edellinen_valmistus['pvmloppu'];
-
-                              #echo "valmistus pvmalku $valmistus[pvmalku] pvmloppu $valmistus[pvmloppu]<br>";
-                              // lasketaan uusi loppuaika
-                              $kesto = valmistuksen_kesto(array('tunnus' => $valmistus['otunnus']));
-                              $pvmloppu = laske_loppuaika(strtotime($valmistus['pvmalku']), $kesto * 60, $linja['selite']);
-                              $valmistus['pvmloppu'] = date('Y-m-d H:i:s', $pvmloppu);
-
-                              // P‰ivitet‰‰n p‰iv‰m‰‰r‰t kantaan
-                              $query = "UPDATE kalenteri
-                                          SET pvmalku='{$valmistus['pvmalku']}', pvmloppu='{$valmistus['pvmloppu']}'
-                                          WHERE tunnus='{$valmistus['tunnus']}'";
-                              pupe_query($query);
-                              #echo "$query <br>";
+                  // Jos tila on OV tai TK (..tai mit‰ tahansa muuta?) saa siirell‰
+                  else {
+                        // Saa siirt‰‰ (alkupvm on edellisen loppuvm) jos edellinen on olemassa
+                        // Jos edelliset‰ ei ole setattu, eli ollaan ekassa kalenterin valmistuksessa, niin ei siirret‰ mihink‰‰n
+                        if ($previous) {
+                              $current['pvmalku'] = $previous['pvmloppu'];
                         }
-
                   }
 
-                  // Otetaan valmistus talteen seuraavaa kierrosta varten
-                  $edellinen_valmistus = $valmistus;
+                  // Lasketaan valmistuksen kesto
+                  // @params tunnus => lasku.tunnus
+                  $kesto = valmistuksen_kesto( array('tunnus' => $current['otunnus']));
+
+                  // Lasketaan uusi loppuaika
+                  $pvmloppu = laske_loppuaika(strtotime($current['pvmalku']), $kesto * 60, $linja['selite']);
+
+                  // Valmistuksen uusi loppuaika
+                  $current['pvmloppu'] = date('Y-m-d H:i:s', $pvmloppu);
+
+                  // P‰ivitet‰‰n uudet p‰iv‰m‰‰r‰t tietokantaan
+                  $query = "UPDATE kalenteri
+                              SET pvmalku='{$current['pvmalku']}', pvmloppu='{$current['pvmloppu']}'
+                              WHERE tunnus='{$current['tunnus']}'";
+                  pupe_query($query);
+
+                  // Laitetaan kierroksen valmistus edellinen muuttujaan
+                  $previous = $current;
             }
       }
 }
