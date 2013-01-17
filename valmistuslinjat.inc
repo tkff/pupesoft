@@ -191,8 +191,8 @@ function laske_loppuaika($alkuaika, $minuutit = 0, $valmistuslinja) {
 
       // Pienin kalenterin yksikkö, 30 minuuttia
       if(!defined('INTERVALLI'))          define('INTERVALLI', 30);
-      if(!defined('TYOPAIVAN_ALKU'))      define('TYOPAIVAN_ALKU', '08:00');
-      if(!defined('TYOPAIVAN_LOPPU'))     define('TYOPAIVAN_LOPPU', '16:00');
+      if(!defined('TYOPAIVAN_ALKU'))      define('TYOPAIVAN_ALKU', '07:00');
+      if(!defined('TYOPAIVAN_LOPPU'))     define('TYOPAIVAN_LOPPU', '15:00');
 
       if ($minuutit == 0) $minuutit = 60;
 

@@ -73,6 +73,12 @@ $(document).ready(function() {
 				// Otsikko
 				$(element).children('.fc-event-inner').children('.fc-event-title').html(title);
 			}
+			else {
+				var link_to = "<a href='tuotannonsuunnittelu.php?tee=poista&tunnus=" + event.tunnus + "'>Poista</a>";
+				$(element).children('.fc-event-inner').children('.fc-event-title').append("<br>" + link_to);
+
+			}
+
 			// alku- ja loppuaika
 			$(element).children('.fc-event-inner').children('.fc-event-time').html(parse_date(event.start) + " - " + parse_date(event.end));
 		}

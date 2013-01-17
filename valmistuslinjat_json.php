@@ -46,7 +46,8 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 					kalenteri.pvmloppu,
 					kalenteri.kuka,
 					kalenteri.henkilo,
-					kalenteri.tyyppi
+					kalenteri.tyyppi,
+					kalenteri.tunnus
 				FROM kalenteri
 				WHERE yhtio='{$kukarow['yhtio']}'
 				AND tyyppi='PY'";
@@ -71,6 +72,7 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 			$json['allDay'] = false;
 			$json['resource'] = $linja['id'];
 			$json['color'] 	= '#666';
+			$json['tunnus'] = $tapahtuma['tunnus'];
 			$all_events[] 		= $json;
 		}
 
@@ -79,7 +81,8 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 						kalenteri.pvmloppu as end,
 						kalenteri.kuka,
 						kalenteri.henkilo as resource,
-						kalenteri.tyyppi
+						kalenteri.tyyppi,
+						kalenteri.tunnus
 					FROM kalenteri
 					WHERE yhtio='{$kukarow['yhtio']}'
 					AND henkilo='{$linja['id']}'

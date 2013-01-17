@@ -50,6 +50,15 @@ if (isset($method) and $method == 'move') {
 	}
 }
 
+/** Poistetaan kalenterista kalenterimerkintä */
+if (isset($tee) and $tee == 'poista' and is_numeric($tunnus)) {
+	$query = "DELETE FROM kalenteri WHERE yhtio='{$kukarow['yhtio']}' AND tunnus={$tunnus}";
+	if (pupe_query($query)) {
+		echo "Poistettiin kalenterimerkintä!";
+		$tee = '';
+	}
+}
+
 /**
  * Valmistuksen tilan päivittäminen
  */

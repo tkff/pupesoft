@@ -192,8 +192,10 @@ class Valmistus {
 		return $this->tila;
 	}
 
-	/** P‰ivitt‰‰ valmistuksen tilan
-	*/
+	/**
+	 * Asettaa valmistuksen tilan
+	 * @param String $tila
+	 */
 	function setTila($tila) {
 		global $kukarow;
 
@@ -239,7 +241,6 @@ class Valmistus {
 					// Pyˆristet‰‰n aloitusaika
 					$pvmalku = round_time(strtotime('now'));
 					$kesto = valmistuksen_kesto(array('tunnus' => $this->tunnus));
-					echo "kesto: $kesto<br>";
 					$pvmloppu = laske_loppuaika($pvmalku, $kesto*60, $this->valmistuslinja);
 
 					// P‰iv‰m‰‰r‰t oikeaan muotoon
@@ -290,7 +291,10 @@ class Valmistus {
 		}
 	}
 
-	/** Hakee kaikki valmistukset */
+	/**
+	 * Hakee kaikki valmistukset
+	 * @return Array $valmistukset
+	 */
 	static function all() {
 		global $kukarow;
 
