@@ -15,7 +15,7 @@ if ($tee == 'paivita' and isset($tunnus)) {
 
 	// Yritetään muuttaa valmistuksen tilaa
 	try {
-		$valmistus->setTila(Valmistus::VALMIS_TARKASTUKSEEN);
+		$valmistus->setTila(Valmistus::TARKASTETTU);
 	} catch (Exception $e) {
 		$errors = $e->getMessage();
 	}
@@ -53,6 +53,7 @@ if ($tee == 'nayta' and isset($tunnus)) {
 	echo "<a href='tarkastettavat_valmistukset.php'>Takaisin</a>";
 	echo " ";
 	echo "<form action='tarkastettavat_valmistukset.php' method='post'>
+				<input type='hidden' name='tunnus' value='{$valmistus->tunnus()}'>
 				<input name='tee' type='hidden' value='paivita'>
 				<input name='submit' type='submit' value='Tarkastettu'>
 			</form>";

@@ -50,7 +50,9 @@ if (isset($method) and $method == 'move') {
 	}
 }
 
-/** Valmistuksen tilan päivittäminen */
+/**
+ * Valmistuksen tilan päivittäminen
+ */
 if ($tee == 'paivita' and isset($method) and $method == 'update') {
 	$valmistus = Valmistus::find($tunnus);
 
@@ -60,14 +62,13 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 
 		echo "<font class='head'>" . t($otsikko) . "</font>";
 
-		echo "<form method='post'>";
+		echo "<form method='POST'>";
 		echo "<input type='hidden' name='tunnus' value='$tunnus'>";
 		echo "<input type='hidden' name='tila' value='$tila'>";
 		echo "<input type='hidden' name='tee' value='paivita'>";
 		echo "<input type='hidden' name='varmistus' value='ok'>";
 
 		echo "<table>";
-
 		echo "<tr><th>Valmistus</th><td>{$valmistus->tunnus()}</td></tr>";
 
 		// Haetaan valmisteet
@@ -102,13 +103,15 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 	// Jos kaikki ok, päivitetään valmistus
 	if ($varmistus == 'ok') {
 
+		// Splitatanko valmistus flag
 		$splitataan = false;
 
-		// Päivitetään valmisteet
+		// Tarkistetaan syötetyt määrät ja verrataan valmisteen tilauksen määriin
 		foreach ($valmistus->tuotteet() as $valmiste) {
 
 			// Tarkastetaan tarvitseeko valmistusta splitata
-			if ($valmiste['varattu'] > $valmisteet[$valmiste['tunnus']]['maara']) {
+			if ($valmiste['varattu'] > $valmisteet[$valmiste['tunnus']]['maara'] and ($tila == 'TK' or $tila == 'VT')) {
+				#echo $valmiste['varattu']. " > " . $valmisteet[$valmiste['tunnus']['maara']] . "<br>";
 				$jaettavat_valmisteet[$valmiste['tunnus']] = $valmisteet[$valmiste['tunnus']]['maara'];
 				$splitataan = true;
 			}
@@ -120,7 +123,7 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 			try {
 				$kopion_id = jaa_valmistus($valmistus->tunnus(), $jaettavat_valmisteet);
 			} catch (Exception $e) {
-				$errors = "Virhe valmistuksen jakamisessa, ". $e->getMessage();
+				$errors = "<font class='error'>Virhe valmistuksen jakamisessa, " . $e->getMessage() . "</font>";
 			}
 		}
 
@@ -330,10 +333,10 @@ if ($tee == '') {
 	echo "</tr>";
 	echo "<tr>";
 	echo "<th>Alkuaika:</th>";
-	echo "<td><input type='text' name='pvmalku' value='" . date('d.m.Y'). " 08:00'></td><td class='back'>pp.kk.vvvv hh:mm</td>";
+	echo "<td><input type='text' name='pvmalku' value='" . date('d.m.Y'). " 07:00'></td><td class='back'>pp.kk.vvvv hh:mm</td>";
 	echo "</tr></tr>";
 	echo "<th>Loppuaika:</th>";
-	echo "<td><input type='text' name='pvmloppu' value='" . date('d.m.Y'). " 16:00'></td><td class='back'>pp.kk.vvvv hh:mm</td>";
+	echo "<td><input type='text' name='pvmloppu' value='" . date('d.m.Y'). " 15:00'></td><td class='back'>pp.kk.vvvv hh:mm</td>";
 	echo "</tr>";
 	echo "<table>";
 	echo "<br>";

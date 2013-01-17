@@ -27,7 +27,8 @@ function hae_valmistuslinjan_valmistukset($linja) {
                   FROM kalenteri
                   JOIN lasku on (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
                   WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
-                  AND henkilo='{$linja['id']}'";
+                  AND henkilo='{$linja['id']}'
+                  AND lasku.valmistuksen_tila != 'TA'";
       $result = pupe_query($query);
 
       $valmistuslinjan_tuotteet = array();
@@ -297,7 +298,7 @@ function rebuild_valmistuslinjat($from = 'now') {
                   $current = $valmistus;
 
                   // Jos tila on VA tai VT
-                  if ($current['valmistuksen_tila'] == 'VA' or $current['valmistuksen_tila'] == 'VT') {
+                  if ($current['valmistuksen_tila'] == 'VA' or $current['valmistuksen_tila'] == 'VT' or $current['valmistuksen_tila'] == 'TA') {
                         // Ei saa siirt‰‰ (ei kosketa alkupvm)
                   }
                   // Jos tila on OV tai TK (..tai mit‰ tahansa muuta?) saa siirell‰

@@ -199,7 +199,7 @@ class Valmistus {
 
 		/** Sallitut tilat ja niiden mahdolliset vaihtoehdot*/
 		$states = array(
-			Valmistus::ODOTTAA 				=> array(Valmistus::VALMISTUKSESSA, Valmistus::VALMIS_TARKASTUKSEEN, Valmistus::KESKEYTETTY, Valmistus::ODOTTAA),
+			Valmistus::ODOTTAA 				=> array(Valmistus::VALMISTUKSESSA, Valmistus::ODOTTAA),
 			Valmistus::VALMISTUKSESSA 		=> array(Valmistus::KESKEYTETTY, Valmistus::VALMIS_TARKASTUKSEEN),
 			Valmistus::KESKEYTETTY 			=> array(Valmistus::VALMISTUKSESSA),
 			Valmistus::VALMIS_TARKASTUKSEEN => array(Valmistus::TARKASTETTU, Valmistus::ODOTTAA)
@@ -255,9 +255,6 @@ class Valmistus {
 						throw new Exception("Valmistuksen aikoja ei p‰ivitetty");
 					}
 
-					// P‰ivitet‰‰n lasku.alatila='C' # Ker‰tty!
-
-					echo "valmis";
 					break;
 
 				// Valmistus keskeytetty
@@ -267,14 +264,17 @@ class Valmistus {
 
 				// Valmis tarkastukseen
 				case Valmistus::VALMIS_TARKASTUKSEEN:
-					//throw new Exception("Tyhj‰");
 					echo "valmistus valmis tarkastukseen";
+					break;
 
+				// Tarkastettu
+				case Valmistus::TARKASTETTU:
+					echo "valmistus merkattu tarkastetuksi!";
 					break;
 
 				// Muut
 				default:
-					throw new Exception("Tuntematon tila");
+					throw new Exception("Valmistusta yritettiin muuttaa tuntemattomaan tilaan");
 					break;
 			}
 
@@ -304,8 +304,9 @@ class Valmistus {
 					FROM lasku
 					LEFT JOIN kalenteri ON (lasku.yhtio=kalenteri.yhtio AND lasku.tunnus=kalenteri.otunnus)
 					WHERE lasku.yhtio='{$kukarow['yhtio']}'
+					AND lasku.valmistuksen_tila in ('OV', 'TK')
 					AND lasku.tila='V'
-					AND lasku.alatila in ('', 'J')";
+					AND lasku.alatila in ('', 'J', 'C')";
 		$result = pupe_query($query);
 
 		$valmistukset = array();
