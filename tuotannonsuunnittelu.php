@@ -28,10 +28,7 @@ if (isset($method) and $method == 'move') {
 				JOIN lasku on (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
 				WHERE kalenteri.yhtio='{$kukarow['yhtio']}' AND kalenteri.otunnus='{$tunnus}'";
 	$result = pupe_query($query);
-	#echo $query;
 	$valittu_valmistus = mysql_fetch_assoc($result);
-
-	#$valittu_valmistus = Valmistus::find($tunnus);
 
 	// Siiretään aiemmaksi
 	if ($direction == 'left') {
@@ -67,8 +64,9 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 
 	// Keskeytä työ (TK) ja Valmis tarkastukseen (VT) kysyy lisäformilla tiedot valmistuksesta
 	if (!isset($varmistus) and ($tila == 'TK' or $tila == 'VT')) {
-		$otsikko = ($tila=='TK') ? 'Keskeytä työ' : 'Valmista tarkastukseen';
 
+		// Formin otsikko
+		$otsikko = ($tila=='TK') ? 'Keskeytä työ' : 'Valmista tarkastukseen';
 		echo "<font class='head'>" . t($otsikko) . "</font>";
 
 		echo "<form method='POST'>";
@@ -77,6 +75,7 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 		echo "<input type='hidden' name='tee' value='paivita'>";
 		echo "<input type='hidden' name='varmistus' value='ok'>";
 
+		// Valmistuksen valmisteet
 		echo "<table>";
 		echo "<tr><th>Valmistus</th><td>{$valmistus->tunnus()}</td></tr>";
 
@@ -139,11 +138,11 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 		// Yritetään vaihtaa valmistuksen tilaa
 		try {
 			$valmistus->setTila($tila);
-			$tee = '';
 		} catch (Exception $e) {
 			$errors .= "<font class='error'>Valmistuksen tilan muuttaminen epäonnistui. <br>{$e->getMessage()}</font>";
-			$tee = '';
 		}
+
+		$tee = '';
 	}
 
 	rebuild_valmistuslinjat();
@@ -170,13 +169,16 @@ if ($tee == 'lisaa_tyojonoon') {
  */
 if ($tee == 'lisaa_kalenteriin') {
 
+	echo "valmistuslinja: $valmistuslinja tyyppi: $tyyppi";
+
 	// Alkuaika on pakko syöttää
 	if (empty($pvmalku)) {
 		$errors .= "<font class='error'>".t("Alkuaika ei voi olla tyhjä")."</font>";
 	}
 	// Tarkestataan kalenterimerkinnän tyyppi
-	elseif ($valmistuslinja == '' and $tyyppi != 'PY') {
-		$errors .= "<font class='error'>" . t("Valitse joku valmistuslinja. Vain pyhä voi olla yhtiökohtainen.") . "</font>";
+	// Yhtiökohtaisia voi olla PYhä tai Muu Työ
+	elseif ($valmistuslinja == '' and !in_array($tyyppi, array('PY', 'MT'))) {
+		$errors .= "<font class='error'>" . t("Valitse joku valmistuslinja. <br>Vain pyhä tai muu työ voi olla yhtiökohtainen.") . "</font>";
 	}
 	else {
 		// Jos loppuaika on jätetty tyhjäksi, setatan se alkuajan päivän loppuun
@@ -209,6 +211,8 @@ if ($tee == 'lisaa_kalenteriin') {
 	// jatketaan
 	$tee = '';
 }
+
+rebuild_valmistuslinjat();
 
 if ($tee == '') {
 
@@ -291,8 +295,9 @@ if ($tee == '') {
 
 		echo "</td>";
 
-		echo "<td>$kpl</td>";
-		echo "<td>" . $valmistus->kesto() . "</td>";
+		echo "<td>{$kpl}</td>";
+		echo "<td>{$valmistus->kesto()}</td>";
+
 		echo "<td>";
 		// Valmistuslinjan valintalaatikko
 		if ($valmistus->valmistuslinja() == NULL) {

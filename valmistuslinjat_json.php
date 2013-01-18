@@ -50,7 +50,8 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 					kalenteri.tunnus
 				FROM kalenteri
 				WHERE yhtio='{$kukarow['yhtio']}'
-				AND tyyppi='PY'";
+				AND henkilo = ''
+				AND tyyppi IN ('PY', 'MT')";
 	$result = pupe_query($query);
 
 	$yhtiokohtaiset_tapahtumat = array();
@@ -66,7 +67,7 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 		// Lis‰t‰‰n yhtiokohtaiset tapahtumat
 		foreach($yhtiokohtaiset_tapahtumat as $tapahtuma) {
 			$json = array();
-			$json['title'] 	= utf8_encode("Pyh‰");
+			$json['title'] 	= utf8_encode($tapahtuma['tyyppi']);
 			$json['start'] 	= $tapahtuma['pvmalku'];
 			$json['end'] 	= $tapahtuma['pvmloppu'];
 			$json['allDay'] = false;

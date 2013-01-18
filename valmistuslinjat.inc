@@ -209,7 +209,7 @@ function laske_loppuaika($alkuaika, $minuutit = 0, $valmistuslinja) {
       $query = "SELECT pvmalku, pvmloppu
                   FROM kalenteri
                   WHERE yhtio='{$kukarow['yhtio']}'
-                  AND tyyppi='PY'
+                  AND (tyyppi IN ('PY', 'MT') AND henkilo='')
                   OR (tyyppi IN ('SA', 'PO', 'PE', 'MT', 'LO') AND henkilo={$valmistuslinja})
                   ORDER BY pvmalku;";
       $result = pupe_query($query);
@@ -274,6 +274,7 @@ function rebuild_valmistuslinjat($from = 'now') {
                         WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
                         AND henkilo='{$linja['selite']}'
                         AND pvmloppu > '$from'
+                        AND valmistuksen_tila != 'TK'
                         ORDER BY pvmalku";
             $result = pupe_query($query);
 
@@ -310,6 +311,9 @@ function rebuild_valmistuslinjat($from = 'now') {
                         }
                   }
 
+                  if ($current['valmistuksen_tila'] == 'VT' or $current['valmistuksen_tila'] == 'TA') {
+                        continue;
+                  }
                   // Lasketaan valmistuksen kesto
                   // @params tunnus => lasku.tunnus
                   $kesto = valmistuksen_kesto( array('tunnus' => $current['otunnus']));
@@ -494,8 +498,8 @@ function vaihda_valmistusten_paikkaa($vasen, $oikea, $linja) {
       global $kukarow;
 
       // VAlmistuksessa olevia ei siirret‰
-      if ($vasen['valmistuksen_tila'] == 'VA' or $oikea['valmistuksen_tila'] == 'VA') {
-            echo "<font class='error'>Yritit vaihtaa jo valmistuksessa olevaa valmistusta</font><br>";
+      if (in_array($vasen['valmistuksen_tila'], array('VA', 'VT', 'TA')) or in_array($oikea['valmistuksen_tila'], array('VA', 'VT', 'TA'))) {
+            echo "<font class='error'>Valmistusta ei voida siirt‰‰</font><br>";
             return false;
       }
 
