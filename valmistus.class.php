@@ -173,21 +173,6 @@ class Valmistus {
 		return $this->tunnus;
 	}
 
-	###
-	function edellinen() {
-		if ($this->valmistuslinja != '') {
-			// Etitään edellinen valmistus
-			# return new Valmistus($tunnus);
-		}
-	}
-
-	function seuraava() {
-		if ($this->valmistuslinja != '') {
-			// Etitään seuraava valmistus
-			# return new Valmistus($tunnus);
-		}
-	}
-
 	function getTila() {
 		return $this->tila;
 	}
@@ -212,6 +197,7 @@ class Valmistus {
 		if (in_array($tila, $states[$this->tila])) {
 
 			switch ($tila) {
+
 				// Odottaa valmistusta
 				case Valmistus::ODOTTAA:
 					// Poistetaan valmistus kalenterista
@@ -238,7 +224,7 @@ class Valmistus {
 						throw new Exception("Valmistuslinjalla on keskeneräinen valmistus");
 					}
 
-					// Pyöristetään aloitusaika
+					// Pyöristetään aloitusaika (aloitusaikana aikana nykyhetki)
 					$pvmalku = round_time(strtotime('now'));
 					$kesto = valmistuksen_kesto(array('tunnus' => $this->tunnus));
 					$pvmloppu = laske_loppuaika($pvmalku, $kesto*60, $this->valmistuslinja);
@@ -299,7 +285,7 @@ class Valmistus {
 		global $kukarow;
 
 		// Hakee kaikki keskeneräiset valmistukset (lasku/kalenteri)
-		// Valmistukset jotka ovat tilassa kesken tai tulostusjonossa
+		// Vain valmistukset joiden tila on kerätty
 		$query = "SELECT
 						lasku.yhtio,
 						lasku.tunnus,
@@ -310,7 +296,7 @@ class Valmistus {
 					WHERE lasku.yhtio='{$kukarow['yhtio']}'
 					AND lasku.valmistuksen_tila in ('OV', 'TK')
 					AND lasku.tila='V'
-					AND lasku.alatila in ('', 'J', 'C')";
+					AND lasku.alatila in ('J', 'C')";
 		$result = pupe_query($query);
 
 		$valmistukset = array();
