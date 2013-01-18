@@ -52,8 +52,8 @@ if (isset($method) and $method == 'move') {
 
 /** Poistetaan kalenterista kalenterimerkintä */
 if (isset($tee) and $tee == 'poista' and is_numeric($tunnus)) {
-	$query = "DELETE FROM kalenteri WHERE yhtio='{$kukarow['yhtio']}' AND tunnus={$tunnus}";
-	if (pupe_query($query)) {
+	$poista_query = "DELETE FROM kalenteri WHERE yhtio='{$kukarow['yhtio']}' AND tunnus={$tunnus}";
+	if (pupe_query($poista_query)) {
 		echo "Poistettiin kalenterimerkintä!";
 		$tee = '';
 	}
@@ -149,30 +149,47 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 	rebuild_valmistuslinjat();
 }
 
-/** Lisätään valmistus valmistusjonoon
-*/
+/**
+ * Lisää valmistus työjonoon
+ */
 if ($tee == 'lisaa_tyojonoon') {
-	// Lisätään valmistus valmistuslinjalle
-	lisaa_valmistus($valmistus, $valmistuslinja);
+
+	if (!$valmistuslinja) {
+		$errors .= "<font class='error'>Valitse valmistuslinja</font>";
+	}
+	else {
+		// Lisätään valmistus valmistuslinjalle
+		lisaa_valmistus($valmistus, $valmistuslinja);
+	}
+
 	$tee = '';
 }
 
+/**
+ * Lisää kalenteriin muun merkinnän
+ */
 if ($tee == 'lisaa_kalenteriin') {
-
-	// Loppuaika timestampiksi
-	if (!empty($pvmloppu)) $pvmloppu = strtotime($pvmloppu);
 
 	// Alkuaika on pakko syöttää
 	if (empty($pvmalku)) {
 		$errors .= "<font class='error'>".t("Alkuaika ei voi olla tyhjä")."</font>";
 	}
+	// Tarkestataan kalenterimerkinnän tyyppi
+	elseif ($valmistuslinja == '' and $tyyppi != 'PY') {
+		$errors .= "<font class='error'>" . t("Valitse joku valmistuslinja. Vain pyhä voi olla yhtiökohtainen.") . "</font>";
+	}
 	else {
-		$pvmalku = strtotime($pvmalku);
-
-		// Jos pvmloppu on tyhjä, tehdään päivän eventti aloitusajan mukaan
-		if (empty($pvmloppu)) {
+		// Jos loppuaika on jätetty tyhjäksi, setatan se alkuajan päivän loppuun
+		if (!empty($pvmloppu)) {
+			$pvmloppu = strtotime($pvmloppu);
+		}
+		// Jos pvmloppu on tyhjä, setataan se alkupäivän loppuun
+		else {
 			$pvmloppu = mktime(23, 59, 59, date('m', $pvmalku), date('d', $pvmalku), date('Y', $pvmalku));
 		}
+
+		// Alkuaika timestampiksi
+		$pvmalku = strtotime($pvmalku);
 
 		// Jos alkuaika on pienempi kuin loppuaika, lisätään tapahtuma kalenteriin
 		if ($pvmalku < $pvmloppu) {
@@ -187,11 +204,10 @@ if ($tee == 'lisaa_kalenteriin') {
 		else {
 			$errors .= "<font class='error'>".t("Loppuajan on oltava suurempi kuin alkuajan")."</font>";
 		}
-
-		#echo "alkuaika: ".date('Y-m-d H:i:s', $pvmalku).", loppuaika: ".date('Y-m-d H:i:s', $pvmloppu);
-
-		$tee = '';
 	}
+
+	// jatketaan
+	$tee = '';
 }
 
 if ($tee == '') {
@@ -254,12 +270,18 @@ if ($tee == '') {
 
 	//Listataan parkissa olevat valmistukset
 	foreach($valmistukset as $valmistus) {
-		echo "<tr>";
 
+		// Näytetään parkissa vain valmistukset jotka eivät ole kalenterissa
+		if ($valmistus->valmistuslinja() != '' ) {
+			continue;
+		}
+
+		echo "<tr>";
 		echo "<td>" . $valmistus->tunnus() . "</td>";
 		echo "<td>" . $valmistus->getTila() . "</td>";
 		echo "<td>";
-		// Valmistuksella olevat tuotteet
+
+		// Tarkistetaan valmistuksella olevat tuotteet
 		$kpl = '';
 		foreach($valmistus->tuotteet() as $tuote) {
 			echo $tuote['tuoteno'] . " "
@@ -270,9 +292,7 @@ if ($tee == '') {
 		echo "</td>";
 
 		echo "<td>$kpl</td>";
-
 		echo "<td>" . $valmistus->kesto() . "</td>";
-
 		echo "<td>";
 		// Valmistuslinjan valintalaatikko
 		if ($valmistus->valmistuslinja() == NULL) {
@@ -295,10 +315,13 @@ if ($tee == '') {
 		}
 		echo "</td>";
 
+		// Valmistuksen puuttuvat raaka-aineet
 		echo "<td>";
+
 		// foreach($valmistus->puutteet() as $tuoteno => $maara) {
 		// 	echo "tuoteno: $tuoteno saldo: $maara<br>";
 		// }
+
 		echo "</td>";
 
 		echo "</tr>";
@@ -331,11 +354,11 @@ if ($tee == '') {
 	echo "<th>Tyyppi:</th>";
 	echo "<td>";
 	echo "<select name='tyyppi'>";
+	echo "<option value='PY'>Pyhä (yhtiökohtainen)</option>";
 	echo "<option value='PE'>Pekkaspäivä</option>";
 	echo "<option value='SA'>Sairasloma</option>";
 	echo "<option value='MT'>Muu työ</option>";
 	echo "<option value='LO'>Loma</option>";
-	echo "<option value='PY'>Pyhä (yhtiökohtainen)</option>";
 	echo "<option value='PO'>Vapaa/Poissa</option>";
 	echo "</select>";
 	echo "</td>";
