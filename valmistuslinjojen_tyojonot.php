@@ -96,11 +96,27 @@ if ($tee == '') {
 		echo "Ei valmistuslinjoja";
 	}
 
+	// Valmistuksen tilat selväkielisenä
+	$tilat = array(
+			'OV' => 'Odottaa valmistusta',
+			'VA' => 'Valmistuksessa',
+			'TK' => 'Työ keskeytetty',
+			'VT' => 'Valmis tarkastukseen',
+			'TA' => 'Tarkastettu'
+		);
+
 	foreach($linjat as $linja) {
 
 		echo "<table>";
-		echo "<tr><th colspan=4>" . t("Valmistuslinja") . ": " . $linja['selitetark']."</th></tr>";
-		echo "<th>Tila</th><th>Nimitys</th><th>Aika</th><th></th>";
+		echo "<tr>";
+		echo "<th colspan=4>" . t("Valmistuslinja") . ": " . $linja['selitetark']."</th>";
+		echo "</tr>";
+		echo "<tr>
+			<th>Tila</th>
+			<th>Nimitys</th>
+			<th>Määrä</th>
+			<th></th>
+			</tr>";
 
 		// Haetaan linjan 4 uusinta kalenterimerkinnät
 		$tyojono_query = "SELECT kalenteri.kuka, kalenteri.henkilo, nimitys, varattu, yksikko, pvmalku, pvmloppu, kalenteri.tunnus, lasku.valmistuksen_tila, kalenteri.otunnus
@@ -110,6 +126,7 @@ if ($tee == '') {
 						WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
 						AND henkilo='{$linja['selite']}'
 						AND tilausrivi.tyyppi='W'
+						AND lasku.valmistuksen_tila != ('TA')
 						ORDER BY pvmalku
 						LIMIT 4";
 		$tyojono_result = pupe_query($tyojono_query);
@@ -126,10 +143,9 @@ if ($tee == '') {
 			// Työjonon työt
 			while($tyojono = mysql_fetch_assoc($tyojono_result)) {
 				echo "<tr>";
-				echo "<td>" . $tyojono['valmistuksen_tila'] . "</td>";
-				echo "<td>" . $tyojono['nimitys'] . " " . $tyojono['varattu'] . " " . $tyojono['yksikko'] . "</td>";
-
-				echo "<td>({$tyojono['pvmalku']} - {$tyojono['pvmloppu']})</td>";
+				echo "<td>" . strtoupper($tilat[$tyojono['valmistuksen_tila']]) . "</td>";
+				echo "<td>" . $tyojono['nimitys'] . "</td>";
+				echo "<td>" . $tyojono['varattu'] . " " . $tyojono['yksikko'] . "</td>";
 
 				echo "<td>";
 				echo "<form method='post'>";
