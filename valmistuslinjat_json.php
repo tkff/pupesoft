@@ -145,6 +145,7 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 
 			if (!empty($puutteet)) {
 				$json['color'] = '#833';
+				$json['puutteet'] = $puutteet;
 			}
 
 			if ($valmistus['valmistuksen_tila'] == 'VT') {

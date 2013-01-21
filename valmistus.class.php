@@ -188,19 +188,21 @@ class Valmistus {
 		$states = array(
 			Valmistus::ODOTTAA 				=> array(Valmistus::VALMISTUKSESSA, Valmistus::ODOTTAA),
 			Valmistus::VALMISTUKSESSA 		=> array(Valmistus::KESKEYTETTY, Valmistus::VALMIS_TARKASTUKSEEN),
-			Valmistus::KESKEYTETTY 			=> array(Valmistus::VALMISTUKSESSA),
-			Valmistus::VALMIS_TARKASTUKSEEN => array(Valmistus::TARKASTETTU, Valmistus::ODOTTAA)
+			Valmistus::KESKEYTETTY 			=> array(Valmistus::VALMISTUKSESSA, Valmistus::ODOTTAA),
+			Valmistus::VALMIS_TARKASTUKSEEN => array(Valmistus::TARKASTETTU)
 			);
 
 		// Voidaanko uuteen tilaan vaihtaa,
 		// eli löytyykö nykyisen tilan vaihtoehdoista haluttu tila
 		if (in_array($tila, $states[$this->tila])) {
 
+			// Mihin tilaan vaihdetaan
 			switch ($tila) {
 
 				// Odottaa valmistusta
 				case Valmistus::ODOTTAA:
-					// Poistetaan valmistus kalenterista
+
+					// Poistetaan kalenterista vain tilassa ODOTTAA olevia valmistuksia (poistaa valmistuksen kalenteri taulusta)
 					$query = "DELETE FROM kalenteri WHERE yhtio='{$kukarow['yhtio']}' AND otunnus={$this->tunnus}";
 					if (! pupe_query($query)) {
 						throw new Exception("Kalenteri merkintää ei poistettu");
@@ -238,6 +240,7 @@ class Valmistus {
 								SET pvmalku='{$pvmalku}', pvmloppu='{$pvmloppu}'
 								WHERE yhtio='{$kukarow['yhtio']}'
 								AND otunnus='{$this->tunnus}'";
+
 					if (! pupe_query($query)) {
 						throw new Exception("Valmistuksen aikoja ei päivitetty");
 					}
