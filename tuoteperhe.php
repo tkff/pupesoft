@@ -412,6 +412,15 @@
 
 		echo "<font class='message'>".t("Esitysmuoto tallennettu")."!</font><br>";
 
+		$query = "	UPDATE tuoteperhe
+					SET summatuote = '$summatuote'
+					WHERE yhtio = '$kukarow[yhtio]'
+					and tyyppi = '$hakutyyppi'
+					and isatuoteno = '$isatuoteno'";
+		$result = pupe_query($query);
+
+		echo "<font class='message'>".t("Summatuote tallennettu")."!</font><br>";
+
 		$tee = '';
 	}
 
@@ -541,7 +550,13 @@
 
 				echo "<tr><td>$isatuoteno - $isarow[nimitys]</td></tr></table><br>";
 
-				$query = "SELECT ei_nayteta FROM tuoteperhe WHERE yhtio = '$kukarow[yhtio]' and tyyppi = '$hakutyyppi' and isatuoteno = '$isatuoteno' and ei_nayteta != '' ORDER BY isatuoteno, tuoteno LIMIT 1";
+				$query = "SELECT ei_nayteta, omasivu, summatuote
+							FROM tuoteperhe
+							WHERE yhtio = '$kukarow[yhtio]'
+							and tyyppi = '$hakutyyppi'
+							and isatuoteno = '$isatuoteno'
+							#and ei_nayteta != ''
+							ORDER BY isatuoteno, tuoteno LIMIT 1";
 				$ressu = pupe_query($query);
 				$faktarow = mysql_fetch_array($ressu);
 
@@ -550,6 +565,10 @@
 				}
 				elseif($faktarow["ei_nayteta"] == "E") {
 					$sel2 = "SELECTED";
+				}
+				// Lapsirivit n‰ytet‰‰n ilman hintoja
+				elseif($faktarow["ei_nayteta"] == "L") {
+					$sel3 = "SELECTED";
 				}
 
 				echo "<table><form method='post' action='tuoteperhe.php' autocomplete='off'>
@@ -564,11 +583,8 @@
 				echo "	<select name='ei_nayteta'>
 						<option value='' $sel1>".t("Kaikki rivit n‰ytet‰‰n")."</option>
 						<option value='E' $sel2>".t("Lapsirivej‰ ei n‰ytet‰")."</option>
+						<option value='L' $sel3>".t("Lapsirivit n‰ytet‰‰n ilman hintoja")."</option>
 						</select></td>";
-
-				$query = "SELECT omasivu FROM tuoteperhe WHERE yhtio = '$kukarow[yhtio]' and tyyppi = '$hakutyyppi' and isatuoteno = '$isatuoteno' and omasivu != '' ORDER BY isatuoteno, tuoteno LIMIT 1";
-				$ressu = pupe_query($query);
-				$faktarow = mysql_fetch_array($ressu);
 
 				if ($toim == "RESEPTI") {
 					if($faktarow["omasivu"] != "") {
@@ -592,6 +608,29 @@
 							</select></td>";
 				}
 
+				echo "</table><br>";
+
+				// Summatuotteen yll‰pito
+
+				if ($faktarow['summatuote'] == '') {
+					$sel1 = "SELECTED";
+					$sel2 = "";
+				}
+				elseif ($faktarow['summatuote'] == 'K') {
+					$sel1 = "";
+					$sel2 = "SELECTED";
+				}
+
+				echo "<table>";
+				echo "<tr><th>" . t("Summatuote") . "</th></tr>";
+				echo "<tr><td>";
+
+				echo "<select name='summatuote'>";
+				echo "<option value='' $sel1>" . t("Ei") . "</option>";
+				echo "<option value='K' $sel2>" . t("Kyll‰") . "</option>";
+				echo "</select>";
+
+				echo "</td></tr>";
 				echo "</table><br>";
 
 				echo "<form method='post' action='tuoteperhe.php' autocomplete='off'>
