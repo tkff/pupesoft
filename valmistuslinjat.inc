@@ -28,7 +28,7 @@ function hae_valmistuslinjan_valmistukset($linja) {
                   JOIN lasku on (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
                   WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
                   AND henkilo='{$linja['id']}'
-                  AND lasku.valmistuksen_tila != 'TA'";
+                  AND lasku.valmistuksen_tila not in ('VT', 'TA')";
       $result = pupe_query($query);
 
       $valmistuslinjan_tuotteet = array();
@@ -267,14 +267,14 @@ function rebuild_valmistuslinjat($from = 'now') {
       // Järjestellään linja kerrallaan
       while($linja = mysql_fetch_assoc($valmistuslinjat_result)) {
 
-            // Haetaan kaikki linjan valmistukset
+            // Haetaan kaikki linjan valmistukset (paitsi valmiit tarkastukseen ja tarkastetut)
             $query = "SELECT *, kalenteri.tunnus as tunnus
                         FROM kalenteri
                         JOIN lasku ON (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
                         WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
                         AND henkilo='{$linja['selite']}'
                         AND pvmloppu > '$from'
-                        AND valmistuksen_tila != 'TK'
+                        AND valmistuksen_tila not in('VT', 'TA')
                         ORDER BY pvmalku";
             $result = pupe_query($query);
 

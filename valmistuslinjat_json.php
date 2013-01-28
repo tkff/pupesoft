@@ -42,6 +42,7 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 	$all_events = array();
 
 	// Haetaan yhtiökohtaiset merkinnät
+	// Muu työ tai Pyhä
 	$query = "SELECT kalenteri.pvmalku,
 					kalenteri.pvmloppu,
 					kalenteri.kuka,
@@ -78,6 +79,7 @@ if (isset($_GET['valmistukset']) and $_GET['valmistukset'] == 'true') {
 		}
 
 		// Haetaan ja lisätään henkilökohtaiset tapahtumat
+		// pekkanen, sairasloma, muu työ, loma, tai vapaa/poissa
 		$query = "SELECT kalenteri.pvmalku as start,
 						kalenteri.pvmloppu as end,
 						kalenteri.kuka,
