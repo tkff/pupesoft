@@ -9,6 +9,38 @@ if (@include("../inc/parametrit.inc"));
 elseif (@include("parametrit.inc"));
 else exit;
 
+/** Jos kyseess‰ on summatuote, lasketaan tuoteperheen
+ *	lapsituotteiden hinnan is‰tuotteen hinnaksi.
+ *
+ */
+if (!function_exists("lapsituotteiden_summa")) {
+	function lapsituotteiden_summa($tilausrivi) {
+		global $kukarow;
+
+		// Queryyn lis‰, jolla saaadaan tilausrivin alennus
+		$ale_query_select_lisa = generoi_alekentta_select('yhteen', 'M');
+
+		// Haetaan lapsituotteiden hinta, tilattu kpl ja alennusprosentti
+		$tilausrivi_query = "SELECT tuoteno, hinta, tilkpl, {$ale_query_select_lisa} as alennus
+		                    FROM tilausrivi
+		                    WHERE yhtio='{$kukarow['yhtio']}'
+		                    AND otunnus={$tilausrivi['otunnus']}
+		                    AND perheid='{$tilausrivi['perheid']}'
+		                    AND tuoteno!='{$tilausrivi['tuoteno']}'";
+		$tilausrivi_result = pupe_query($tilausrivi_query);
+
+		$hinta = 0;
+
+		// Lasketaan lapsituotteiden hinta yhteen
+		while($rivi = mysql_fetch_assoc($tilausrivi_result)) {
+			$hinta += $rivi['hinta'] * (1-$rivi['alennus']/100) * $rivi['tilkpl'];
+		}
+
+		// Palautetaan is‰tuotteen uusi hinta
+		return round($hinta, 2);
+	}
+}
+
 $tilauskaslisa = "";
 
 // extranet vai normipupe?
@@ -5859,27 +5891,55 @@ if ($tee == '') {
 					$kplhinta = $hinta * generoi_alekentta_php($row, 'M', 'kerto', 'ei_erikoisale');
 
 					if ($kukarow['hinnat'] == 1) {
+						// Hinta
 						echo "<td $class align='right' valign='top'>$myyntihinta</td>";
 					}
+					// Normaali
 					elseif ($kukarow['hinnat'] == 0) {
 
 						if ($myyntihinta != $hinta) $myyntihinta = hintapyoristys($myyntihinta)." (".hintapyoristys($hinta).")";
 						else $myyntihinta = hintapyoristys($myyntihinta);
 
+						// SVH
 						echo "<td $class align='right' valign='top'>$myyntihinta</td>";
 
+						// Ale1%	Ale2%	Ale3%
 						for ($alepostfix = 1; $alepostfix <= $yhtiorow['myynnin_alekentat']; $alepostfix++) {
 							echo "<td {$class} align='right' valign='top'>",($row["ale{$alepostfix}"] * 1),"</td>";
 						}
-
+						// Hinta
 						echo "<td $class align='right' valign='top'>".hintapyoristys($kplhinta, 2)."</td>";
 					}
 
+					// N‰ytet‰‰n vain tuotteen myyntihinta
 					if ($kukarow['hinnat'] == 1) {
+						// Rivihinta
 						echo "<td $class align='right' valign='top'>".hintapyoristys($myyntihinta * ($row["varattu"] + $row["jt"]))."</td>";
 					}
+					// Normaali
 					elseif ($kukarow['hinnat'] == 0) {
-						echo "<td $class align='right' valign='top'>".hintapyoristys($summa)."</td>";
+
+						// Jos kyseess‰ on tuoteperheen is‰tuote
+						// tarkistetaan ett‰ onko kyseess‰ summatuote.
+						if ($row['perheid'] == $row['tunnus']) {
+							$summatuote_query = "SELECT summatuote
+													FROM tuoteperhe
+													WHERE yhtio='{$kukarow['yhtio']}'
+													AND isatuoteno='{$row['tuoteno']}'
+													LIMIT 1";
+							$summatuote_result = pupe_query($summatuote_query);
+							$summatuote = mysql_fetch_assoc($summatuote_result);
+							$row['summatuote'] = $summatuote['summatuote'];
+						}
+
+						// Rivihinta
+						// Jos kyseess‰ on summatuote, lasketaan is‰tuotteen hinta lapsituotteiden hinnan mukaan.
+						if ($row['summatuote'] == 'K') {
+							echo "<td $class align='right' valign='top'>" . lapsituotteiden_summa($row). "</td>";
+						}
+						else {
+							echo "<td $class align='right' valign='top'>".hintapyoristys($summa)."</td>";
+						}
 					}
 
 					if ($kukarow['extranet'] == '' and ($kukarow["naytetaan_katteet_tilauksella"] == "Y" or $kukarow["naytetaan_katteet_tilauksella"] == "B" or ($kukarow["naytetaan_katteet_tilauksella"] == "" and ($yhtiorow["naytetaan_katteet_tilauksella"] == "Y" or $yhtiorow["naytetaan_katteet_tilauksella"] == "B")))) {
@@ -5972,6 +6032,7 @@ if ($tee == '') {
 						$classx = $class;
 					}
 
+					// Alv%
 					if ($row["alv"] >= 500) {
 						echo "<td $classx align='right' valign='top' nowrap>";
 						if ($row["alv"] >= 600) {

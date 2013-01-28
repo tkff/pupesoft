@@ -5328,7 +5328,7 @@ if (!function_exists("generoi_alekentta_select")) {
 			$query = '';
 
 			for ($i = 1; $i <= $maara; $i++) {
-				$query = "(1-{$prefix}.ale{$i}/100)*";
+				$query .= "(1-{$prefix}.ale{$i}/100)*";
 			}
 
 			$query .= "(1-{$prefix}.erikoisale/100)";
