@@ -161,12 +161,25 @@ class Valmistus {
 						AND otunnus=$this->tunnus
 						AND yksikko='H'";
 			$result = pupe_query($query);
-
 			$valmistus = mysql_fetch_assoc($result);
+
 			$this->kesto = $valmistus['kesto'];
 		}
 
 		return $this->kesto;
+	}
+
+	/**
+	 * Valmistukseen jo käytetyt tunnit
+	 */
+	function kaytetty() {
+		$query = "SELECT kentta03 as kaytetyttunnit
+				 	FROM kalenteri
+					WHERE yhtio='$this->yhtio'
+					AND otunnus=$this->tunnus";
+		$result = pupe_query($query);
+		$valmistus = mysql_fetch_assoc($result);
+		return $valmistus['kaytetyttunnit'];
 	}
 
 	function tunnus() {
@@ -202,10 +215,25 @@ class Valmistus {
 				// Odottaa valmistusta
 				case Valmistus::ODOTTAA:
 
-					// Poistetaan kalenterista vain tilassa ODOTTAA olevia valmistuksia (poistaa valmistuksen kalenteri taulusta)
-					$query = "DELETE FROM kalenteri WHERE yhtio='{$kukarow['yhtio']}' AND otunnus={$this->tunnus}";
-					if (! pupe_query($query)) {
-						throw new Exception("Kalenteri merkintää ei poistettu");
+					// Jos työ on keskeytetty ei sitä poisteta kalenterista!
+					if ($this->getTila() == 'OV') {
+						// Poistetaan kalenterista vain tilassa ODOTTAA olevia valmistuksia (poistaa valmistuksen kalenteri taulusta)
+						$query = "DELETE FROM kalenteri WHERE yhtio='{$kukarow['yhtio']}' AND otunnus={$this->tunnus}";
+
+						if (! pupe_query($query)) {
+							throw new Exception("Kalenteri merkintää ei poistettu");
+						}
+					}
+					elseif($this->getTila() == 'TK') {
+						// Jos työ on keskeytetty ja siirretään takaisin parkkiin
+						// nollataan kalenterista valmistuslinja (kalenteri.henkilo)
+
+						$query = "UPDATE kalenteri SET
+									henkilo=''
+									WHERE yhtio='{$kukarow['yhtio']}'
+									AND otunnus='{$this->tunnus}'";
+						pupe_query($query);
+
 					}
 
 					break;
@@ -249,7 +277,6 @@ class Valmistus {
 
 				// Valmistus keskeytetty
 				case Valmistus::KESKEYTETTY:
-					#throw new Exception("Tyhjä");
 					break;
 
 				// Valmis tarkastukseen
@@ -322,7 +349,8 @@ class Valmistus {
 						lasku.valmistuksen_tila as tila,
 						kalenteri.henkilo as valmistuslinja,
 						kalenteri.kentta01 as ylityotunnit,
-						kalenteri.kentta02 as kommentti
+						kalenteri.kentta02 as kommentti,
+						kalenteri.kentta03 as kaytetyttunnit
 					FROM lasku
 					LEFT JOIN kalenteri on (lasku.yhtio=kalenteri.yhtio AND lasku.tunnus=kalenteri.otunnus)
 					WHERE lasku.yhtio='{$kukarow['yhtio']}'

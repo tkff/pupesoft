@@ -123,17 +123,29 @@ function lisaa_valmistus($valmistus, $linja) {
       $pvmalku = date('Y-m-d H:i:s', $start);
       $pvmloppu = date('Y-m-d H:i:s', $end);
 
-      // Lisätään valmistus kalenteriin
-      $query = "INSERT INTO kalenteri SET
-                  yhtio       = '$kukarow[yhtio]',
-                  kuka        = '$kukarow[kuka]',
-                  henkilo     = '$linja',
-                  pvmalku     = '$pvmalku',
-                  pvmloppu    = '$pvmloppu',
-                  tyyppi      = 'valmistus',
-                  otunnus     = $valmistus[tunnus]";
-      #echo $query;
+      // Tarkistetaan onko työ jo kalenterissa (keskeytetty aiemmin)
+      $query = "SELECT * FROM kalenteri WHERE yhtio='{$kukarow['yhtio']}' AND otunnus='{$valmistus['tunnus']}'";
       $result = pupe_query($query);
+
+      if (mysql_num_rows($result) > 0) {
+            $query = "UPDATE kalenteri SET
+                        henkilo='$linja'
+                        WHERE yhtio='{$kukarow['yhtio']}'
+                        AND otunnus={$valmistus['tunnus']}";
+            $result = pupe_query($query);
+      }
+      else {
+            // Lisätään valmistus kalenteriin
+            $query = "INSERT INTO kalenteri SET
+                        yhtio       = '$kukarow[yhtio]',
+                        kuka        = '$kukarow[kuka]',
+                        henkilo     = '$linja',
+                        pvmalku     = '$pvmalku',
+                        pvmloppu    = '$pvmloppu',
+                        tyyppi      = 'valmistus',
+                        otunnus     = $valmistus[tunnus]";
+            $result = pupe_query($query);
+      }
 }
 
 /** Valmistuksen kesto
@@ -142,14 +154,15 @@ function valmistuksen_kesto($valmistus) {
       global $kukarow;
 
       // Lasketaan valmistuksen kokoonpanotyöt yheen
-      $query = "SELECT sum(varattu) as kesto
+      $query = "SELECT sum(varattu) as kesto, kalenteri.kentta03 as kaytetyttunnit
                   FROM tilausrivi
-                  WHERE yhtio='{$kukarow['yhtio']}'
-                  AND otunnus={$valmistus['tunnus']} AND yksikko='H'";
+                  LEFT JOIN kalenteri on (kalenteri.yhtio=tilausrivi.yhtio and kalenteri.otunnus=tilausrivi.otunnus)
+                  WHERE tilausrivi.yhtio='{$kukarow['yhtio']}'
+                  AND tilausrivi.otunnus={$valmistus['tunnus']} AND yksikko='H'";
       $result = pupe_query($query);
       $kesto = mysql_fetch_assoc($result);
 
-      return $kesto['kesto'];
+      return $kesto['kesto'] - $kesto['kaytetyttunnit'];
 }
 
 function hae_valmistuslinjat() {

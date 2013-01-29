@@ -63,11 +63,10 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 	$valmistus = Valmistus::find($tunnus);
 
 	// Keskeytä työ (TK) ja Valmis tarkastukseen (VT) kysyy lisäformilla tiedot valmistuksesta
-	if (!isset($varmistus) and ($tila == 'TK' or $tila == 'VT')) {
+	if (!isset($varmistus) and ($tila == 'VT')) {
 
-		// Formin otsikko
-		$otsikko = ($tila=='TK') ? 'Keskeytä työ' : 'Valmista tarkastukseen';
-		echo "<font class='head'>" . t($otsikko) . "</font>";
+		// VALMISTA FORMI
+		echo "<font class='head'>" . t("Valmista tarkastukseen") . "</font>";
 
 		echo "<form method='POST'>";
 		echo "<input type='hidden' name='tunnus' value='$tunnus'>";
@@ -89,13 +88,54 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 				<th>Valmistettava määrä</th>
 				<td><input type='text' name='valmisteet[{$valmiste['tunnus']}][maara]' value='{$valmiste['varattu']}'></td>
 				</tr>";
+		}
+
+		echo "<tr>
+			<th>Ylityötunnit</th>
+			<td><input type='text' name='ylityotunnit' value='{$valmistus->ylityotunnit}'></td>
+			</tr>";
+		echo "<tr>
+			<th>Kommentit</th>
+			<td><input type='text' name='kommentti' value='{$valmistus->kommentti}'></td>
+			</tr>";
+		echo "</table>";
+
+		echo "<br>";
+		echo "<a href='tuotannonsuunnittelu.php'>Takaisin</a> ";
+		echo "<input type='submit' value='Valmis'>";
+		echo "</form>";
+	}
+	// KESKEYTÄ FORMI
+	else if (!isset($varmistus) and ($tila == 'TK')) {
+		echo "<font class='head'>" . t("Keskeytä työ") . "</font>";
+
+		echo "<form method='POST'>";
+		echo "<input type='hidden' name='tunnus' value='$tunnus'>";
+		echo "<input type='hidden' name='tila' value='$tila'>";
+		echo "<input type='hidden' name='tee' value='paivita'>";
+		echo "<input type='hidden' name='varmistus' value='ok'>";
+
+		// Valmistuksen valmisteet
+		echo "<table>";
+		echo "<tr><th>Valmistus</th><td>{$valmistus->tunnus()}</td></tr>";
+
+		// Haetaan valmisteet
+		foreach($valmistus->tuotteet() as $valmiste) {
 			echo "<tr>
-				<th>Ylityötunnit</th>
-				<td><input type='text' name='valmisteet[{$valmiste['tunnus']}][tunnit]'></td>
+				<th>Tuoteno</th>
+				<td>{$valmiste['tuoteno']}
 				</tr>";
 		}
 
-		echo "<tr><th>Kommentit</th><td><input type='text' name='kommentti'></td></tr>";
+		echo "<tr>
+			<th>Ylityötunnit</th>
+			<td><input type='text' name='ylityotunnit' value='{$valmistus->ylityotunnit}'></td>
+			</tr>";
+		echo "<tr>
+			<th>Käytetyt tunnit</th>
+			<td><input type='text' name='kaytetyttunnit' value='{$valmistus->kaytetyttunnit}'></td>
+			</tr>";
+		echo "<tr><th>Kommentit</th><td><input type='text' name='kommentti' value='{$valmistus->kommentti}'></td></tr>";
 		echo "</table>";
 
 		echo "<br>";
@@ -108,7 +148,7 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 		$varmistus = 'ok';
 	}
 
-	// Jos kaikki ok, päivitetään valmistus
+	// Jos kaikki ok, päivitetään valmistuksen tiedot
 	if ($varmistus == 'ok') {
 
 		// Splitatanko valmistus flag
@@ -118,7 +158,7 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 		foreach ($valmistus->tuotteet() as $valmiste) {
 
 			// Tarkastetaan tarvitseeko valmistusta splitata
-			if ($valmiste['varattu'] > $valmisteet[$valmiste['tunnus']]['maara'] and ($tila == 'TK' or $tila == 'VT')) {
+			if ($valmiste['varattu'] > $valmisteet[$valmiste['tunnus']]['maara'] and ($tila == 'VT')) {
 				#echo $valmiste['varattu']. " > " . $valmisteet[$valmiste['tunnus']['maara']] . "<br>";
 				$jaettavat_valmisteet[$valmiste['tunnus']] = $valmisteet[$valmiste['tunnus']]['maara'];
 				$splitataan = true;
@@ -135,11 +175,25 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 			}
 		}
 
-		// Yritetään vaihtaa valmistuksen tilaa
-		try {
-			$valmistus->setTila($tila);
-		} catch (Exception $e) {
-			$errors .= "<font class='error'>Valmistuksen tilan muuttaminen epäonnistui. <br>{$e->getMessage()}</font>";
+		if ($tila=='TK' or $tila=='VT') {
+			// Tarkistetaan ja päivitetään käytetyt tunnit, ylityötunnit ja kommentti
+			$query = "UPDATE kalenteri SET
+						kentta01='{$ylityotunnit}',
+						kentta02='{$kommentti}',
+						kentta03='{$kaytetyttunnit}'
+						WHERE yhtio='{$kukarow['yhtio']}'
+						AND otunnus='{$tunnus}'";
+			pupe_query($query);
+		}
+
+		// Jos ei oo virheitä yritetään vaihtaa valmistuksen tilaa
+		if (empty($errors)) {
+			try {
+				$valmistus->setTila($tila);
+			} catch (Exception $e) {
+				$errors .= "<font class='error'>Valmistuksen tilan muuttaminen epäonnistui. <br>{$e->getMessage()}</font>";
+			}
+
 		}
 
 		$tee = '';
@@ -262,7 +316,7 @@ if ($tee == '') {
 	echo "<th>Tila</th>";
 	echo "<th>Nimitys</th>";
 	echo "<th>Määrä</th>";
-	echo "<th>Kesto (h)</th>";
+	echo "<th>Kesto</th>";
 	echo "<th></th>";
 	echo "<th>Puutteet</th>";
 	echo "</tr>";
@@ -274,11 +328,6 @@ if ($tee == '') {
 
 	//Listataan parkissa olevat valmistukset
 	foreach($valmistukset as $valmistus) {
-
-		// Näytetään parkissa vain valmistukset jotka eivät ole kalenterissa
-		if ($valmistus->valmistuslinja() != '' ) {
-			continue;
-		}
 
 		echo "<tr>";
 		echo "<td>" . $valmistus->tunnus() . "</td>";
@@ -296,11 +345,11 @@ if ($tee == '') {
 		echo "</td>";
 
 		echo "<td>{$kpl}</td>";
-		echo "<td>{$valmistus->kesto()}</td>";
+		echo "<td>" . ($valmistus->kesto() - $valmistus->kaytetty()) . "</td>";
 
 		echo "<td>";
 		// Valmistuslinjan valintalaatikko
-		if ($valmistus->valmistuslinja() == NULL) {
+		if ($valmistus->valmistuslinja() == 0 or $valmistus->valmistuslinja() == NULL) {
 			echo "<form method='post' name='lisaa_tyojonoon'>";
 			echo "<input type='hidden' name='tee' value='lisaa_tyojonoon'>";
 			echo "<input type='hidden' name='valmistus' value='{$valmistus->tunnus()}'>";
@@ -328,7 +377,6 @@ if ($tee == '') {
 		// }
 
 		echo "</td>";
-
 		echo "</tr>";
 	}
 
