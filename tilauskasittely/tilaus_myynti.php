@@ -9,6 +9,80 @@ if (@include("../inc/parametrit.inc"));
 elseif (@include("parametrit.inc"));
 else exit;
 
+/** Jos summatuotteen isätuotteelle on syötetty hinta, lasketaan lapsituotteiden hinta
+ * isätuotteen hinnan mukaan. Eli jyvitetään isätuotteen hinta lapsituotteille.
+ */
+if (!function_exists("summatuotteen_jyvitys")) {
+	function summatuotteen_jyvitys($tilausrivin_tunnus)	{
+		global $kukarow;
+
+		$query = "SELECT *
+					FROM tilausrivi
+					WHERE yhtio='{$kukarow['yhtio']}'
+					AND tunnus='{$tilausrivin_tunnus}'";
+		$result = pupe_query($query);
+		$tilausrivi = mysql_fetch_assoc($result);
+
+		// Haetaan summatuotteen lapsituotteet
+		$query = "SELECT *
+					FROM tilausrivi
+					WHERE yhtio='{$kukarow['yhtio']}'
+					AND otunnus={$tilausrivi['otunnus']}
+					AND perheid={$tilausrivi['perheid']}
+					AND tunnus!={$tilausrivi['tunnus']}";
+		$result = pupe_query($query);
+
+		// Lasketaan summatuotteen summa
+		$lapsituotteiden_summa = 0;
+		while($row = mysql_fetch_assoc($result)) {
+			echo $row['hinta'] ."<br>";
+			$lapsituotteiden_summa += $row['hinta'];
+		}
+
+		echo "Lapsituotteiden summa: $lapsituotteiden_summa";
+
+		// Jos isätuotteella ei ole hintaa on isätuotteen hinta, lapsituotteiden summa
+		if ($tilausrivi['hinta'] > 0) {
+			$isatuotteen_hinta = $tilausrivi['hinta'];
+		}
+		// Jos isätuotteelle on asetettu hinta, jyvitetään se lapsituotteille
+		else {
+			$isatuotteen_hinta = $lapsituotteiden_summa;
+		}
+
+		// Kelataan alkuun
+		mysql_data_seek($result, 0);
+
+		// Lasketaan lapsituotteiden hintojen suhteellisuus toisiinsa
+		$suhteet = array();
+		$hinnat = array();
+
+		while($row = mysql_fetch_assoc($result)) {
+			$suhteet[$row['tuoteno']] = round($row['hinta'] / $lapsituotteiden_summa, 2);
+			$hinnat[$row['tuoteno']] = round(($row['hinta'] / $lapsituotteiden_summa) * $isatuotteen_hinta, 2);
+		}
+
+		// HUOM! tää tehtäs vain jos isätuotteelle on annettu hinta
+		// Loopataan lapsituotteille uusi hinta
+		foreach($hinnat as $tuoteno => $hinta) {
+			$lapsituotteet_query = "UPDATE tilausrivi
+									SET hinta={$hinta}
+									WHERE yhtio='{$kukarow['yhtio']}'
+									and perheid='{$tilausrivi['perheid']}'
+									AND tuoteno='{$tuoteno}'
+									AND otunnus='{$tilausrivi['otunnus']}'";
+			$result = pupe_query($lapsituotteet_query);
+		}
+
+		// Nollataan isätuotteelle syötetty hinta
+		$isatuotteen_query = "UPDATE tilausrivi
+							SET hinta=0
+							WHERE yhtio='{$kukarow['yhtio']}'
+							AND tunnus={$tilausrivi['tunnus']}";
+		$result = pupe_query($isatuotteen_query);
+	}
+}
+
 /** Jos kyseessä on summatuote, lasketaan tuoteperheen
  *	lapsituotteiden hinnan isätuotteen hinnaksi.
  *
@@ -5935,10 +6009,11 @@ if ($tee == '') {
 						// Rivihinta
 						// Jos kyseessä on summatuote, lasketaan isätuotteen hinta lapsituotteiden hinnan mukaan.
 						if ($row['summatuote'] == 'K') {
-							echo "<td $class align='right' valign='top'>" . lapsituotteiden_summa($row). "</td>";
+							// Isätuotteen hinta tulee lapsituotteiden hintojen summasta
+							echo "<td $class align='right' valign='top'>" . lapsituotteiden_summa($row) * $alvillisuus_kerto . "</td>";
 						}
 						else {
-							echo "<td $class align='right' valign='top'>".hintapyoristys($summa)."</td>";
+							echo "<td $class align='right' valign='top'>" . hintapyoristys($summa) . "</td>";
 						}
 					}
 

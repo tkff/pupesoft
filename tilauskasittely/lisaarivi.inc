@@ -1313,6 +1313,9 @@
 							}
 						}
 
+						// Jos is‰tuote on summatuote, setataan t‰m‰ muuttuja
+						$summaisalisatty = '';
+
 						//Jos homma on ok niin lis‰t‰‰n rivi
 						if ($perheok == 0) {
 
@@ -1335,6 +1338,14 @@
 											WHERE yhtio='$kukarow[yhtio]' and tuoteno='$myy_tuoteno[$indeksi]'";
 								$tres = pupe_query($query);
 								$trow = mysql_fetch_assoc($tres);
+
+								// Tarkistetaan onko lis‰tt‰v‰ tuote summatuote
+								$st_query = "SELECT summatuote
+											FROM tuoteperhe
+											WHERE yhtio='{$kukarow['yhtio']}'
+											AND isatuoteno='{$myy_tuoteno[$indeksi]}'";
+								$st_result = pupe_query($st_query);
+								$summatuote_result = mysql_fetch_assoc($st_result);
 
 								$ale_kaikki_array = array();
 
@@ -1517,6 +1528,10 @@
 
 								$result = pupe_query($query);
 								$lisatty_tun = mysql_insert_id();
+
+								if ($summatuote_result['summatuote'] == 'K') {
+									$summaisalisatty = $lisatty_tun;
+								}
 
 								$trivtyrow = array("selite" => "");
 
@@ -1753,6 +1768,12 @@
 				} // end if toimittamatta > 0
 			} // end foreach myy_tuoteno
 		} // end saadaanko myyd‰ osatoimitus
+	}
+
+	// Lisatyt rivit eka on siis summatuote
+	if ($summaisalisatty != '') {
+		// Jyvitet‰‰n is‰tuotteen hinta lapsituotteille
+		summatuotteen_jyvitys($summaisalisatty);
 	}
 
 	// jos tultiin ulos loopista, ett‰ meill‰ on toimittamattomia rivej‰, tehd‰‰n niist‰ puuterivi
