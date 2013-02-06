@@ -175,7 +175,7 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 			}
 		}
 
-		if ($tila=='TK' or $tila=='VT') {
+		if ($tila=='TK' or $tila=='VT' and $valmistus->getTila() == 'VA') {
 			// Tarkistetaan ja päivitetään käytetyt tunnit, ylityötunnit ja kommentti
 			$query = "UPDATE kalenteri SET
 						kentta01='{$ylityotunnit}',
