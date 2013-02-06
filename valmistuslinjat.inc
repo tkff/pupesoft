@@ -318,10 +318,14 @@ function rebuild_valmistuslinjat($from = 'now') {
                   // Jos tila on OV tai TK (..tai mit‰ tahansa muuta?) saa siirell‰
                   else {
                         // Saa siirt‰‰ (alkupvm on edellisen loppuvm) jos edellinen on olemassa
-                        // Jos edelliset‰ ei ole setattu, eli ollaan ekassa kalenterin valmistuksessa, niin ei siirret‰ mihink‰‰n
                         if ($previous) {
                               $current['pvmalku'] = $previous['pvmloppu'];
                         }
+                        else {
+                              $current['pvmalku'] = date('Y-m-d H:i:s');
+                        }
+                        // Jos edelliset‰ ei ole setattu, eli ollaan ekassa kalenterin valmistuksessa.
+                        // Kellutetaan kaikki t‰h‰n hetkeen?
                   }
 
                   if ($current['valmistuksen_tila'] == 'VT' or $current['valmistuksen_tila'] == 'TA') {
