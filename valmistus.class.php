@@ -111,7 +111,6 @@ class Valmistus {
 			$muut_valmistukset = mysql_fetch_assoc($muut_valmistukset_result);
 			#echo "muut: $muut_valmistukset[varattu] ($muut_valmistukset[otunnus])<br>";
 
-
 			// Haetaan raaka-aineen ostotilauksia, jotka vaikuttavat valmistuksen aloitukseen
 			$query = "SELECT COALESCE(sum(varattu), 0) AS varattu
 			            FROM tilausrivi
@@ -127,7 +126,7 @@ class Valmistus {
 
 			$_saldo = $saldo['myytavissa'] - $muut_valmistukset['varattu'] + $ostotilaukset['varattu'];
 
-			if ($_saldo <= 0) {
+			if ($_saldo <= $raaka_aine['varattu']) {
 				$puutteet[$raaka_aine['tuoteno']] = $_saldo;
 			}
 		}

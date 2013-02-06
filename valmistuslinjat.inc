@@ -442,7 +442,7 @@ function puuttuvat_raaka_aineet($tunnus, $aloitus_pvm = 'now') {
             // Huomioidaan vain muiden valmistusten varaamat ja mahdollisten ostotilausten vaikutus saldoihin.
             $raaka_aine_saldo = $saldo['myytavissa']- $muut_valmistukset['varattu'] + $ostotilaukset['varattu'];
 
-            if ($raaka_aine_saldo <= 0) {
+            if ($raaka_aine_saldo <= $raaka_aine['varattu']) {
                   $vajaat_saldot[$raaka_aine['tuoteno']] = $raaka_aine_saldo;
 
                   $html .= "<td>$raaka_aine_saldo (Raaka-aine ei riitä!)</td>";
@@ -454,7 +454,7 @@ function puuttuvat_raaka_aineet($tunnus, $aloitus_pvm = 'now') {
 
       $html .= "</table>";
 
-     ## echo $html;
+      #echo $html;
 
       return $vajaat_saldot;
 }
