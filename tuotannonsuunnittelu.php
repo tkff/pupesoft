@@ -63,7 +63,7 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 	$valmistus = Valmistus::find($tunnus);
 
 	// Keskeytä työ (TK) ja Valmis tarkastukseen (VT) kysyy lisäformilla tiedot valmistuksesta
-	if (!isset($varmistus) and ($tila == 'VT')) {
+	if (!isset($varmistus) and ($tila == 'VT') and $valmistus->getTila() == 'VA') {
 
 		// VALMISTA FORMI
 		echo "<font class='head'>" . t("Valmista tarkastukseen") . "</font>";
@@ -106,7 +106,7 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 		echo "</form>";
 	}
 	// KESKEYTÄ FORMI
-	else if (!isset($varmistus) and ($tila == 'TK')) {
+	else if (!isset($varmistus) and ($tila == 'TK') and $valmistus->getTila() == 'VA') {
 		echo "<font class='head'>" . t("Keskeytä työ") . "</font>";
 
 		echo "<form method='POST'>";
