@@ -10,8 +10,6 @@ if ($yhtiorow['valmistuksessa_kaytetaan_tilakoodeja'] != 'K') {
 	exit("Valmistuslinjojen työjonot toiminta vaatii yhtiönparametrin valmistuksessa käytetään tilakoodeja");
 }
 
-$title = array('VT' => 'Valmista tarkastukseen', 'TK' => 'Keskeytä työ');
-
 /**
  * Näytetään lomake valmistuksen tilan vaihdossa
  *
@@ -20,12 +18,16 @@ if (isset($tee) and $tee == 'verify') {
 	// Haetaan aina valmistus
 	$valmistus = Valmistus::find($tunnus);
 
-	// Näytetään edit formi (valmista_tarkastukseen tai keskeytys)
+	// Näytetään edit formi (valmista_tarkastukseen)
 	// Formilla kysytään valmistettu määrä ja kommentit
-	if ($tila == Valmistus::VALMIS_TARKASTUKSEEN or $tila == Valmistus::KESKEYTETTY) {
-		$title = $title[$tila];
+	if ($tila == Valmistus::VALMIS_TARKASTUKSEEN) {
 		include '_valmistus_edit.php';
-	} else {
+	}
+	// Näytetään formi (keskeytys)
+	else if ($tila == Valmistus::KESKEYTETTY) {
+		include '_keskeyta_valmistus.php';
+	}
+	else {
 		$tee = 'update';
 	}
 }
@@ -38,45 +40,57 @@ if (isset($tee) and $tee == 'update') {
 	// Haetaan aina valmistus
 	$valmistus = Valmistus::find($tunnus);
 
-	// Loopataan päivitettävät valmisteet läpi ja tarkistetaan syötetyt määrät
-	// Splitataan tarvittaessa
-	try {
+	// Keskeytetään työ
+	if ($tila == 'TK') {
+		// Merkataan kommentti, ylityötunnit ja kaytetyttunnit talteen
+		$valmistus->kommentti = $kommentti;
+		$valmistus->ylityotunnit = $ylityotunnit;
+		$valmistus->kaytetyttunnit = $kaytetyttunnit;
+		$valmistus->keskeyta();
+	}
+	// Merkataan valmiiksi
+	else {
+		// Loopataan päivitettävät valmisteet läpi ja tarkistetaan syötetyt määrät
+		// Splitataan tarvittaessa
+		try {
 
-		// Jos on tultu lomakkeen kautta ($tee=='verify')
-		if (isset($valmisteet)) {
-			$tuotteet = $valmistus->tuotteet();
+			// Jos on tultu lomakkeen kautta ($tee=='verify')
+			if (isset($valmisteet)) {
+				$tuotteet = $valmistus->tuotteet();
 
-			if (empty($tuotteet)) {
-				throw new Exception("Valmistuksella ei ole yhtään valmistetta");
+				if (empty($tuotteet)) {
+					throw new Exception("Valmistuksella ei ole yhtään valmistetta");
+				}
+
+				// Loopataan valmistukset läpi
+				foreach ($tuotteet as $valmiste) {
+
+					// Syötetyt arvot
+					$maara = $valmisteet[$valmiste['tuoteno']]['maara'];
+					$tunnit = $valmisteet[$valmiste['tuoteno']]['tunnit'];
+
+					// Määrää pienennetään (splitataan valmistus)
+					if ($maara < $valmiste['varattu']) {
+						throw new Exception("Virhe valmistuksen keskeytyksessä (ei jaettu)");
+					}
+					// Määrä on sama (valmistus on valmistettu kokonaan)
+					else if ($maara == $valmiste['varattu']) {
+						#echo "määrä sama! päivitetään vaan tila ja lisätään kommentit";
+
+					}
+					// Virhe
+					else {
+						throw new Exception("Valmistettava määrä ei voi olla suurempi kuin tilattu määrä");
+					}
+				}
 			}
 
-			// Loopataan valmistukset läpi
-			foreach ($tuotteet as $valmiste) {
+			// Päivitetään lopuksi tila
+			$valmistus->setTila($tila);
 
-				// Syötetyt arvot
-				$maara = $valmisteet[$valmiste['tuoteno']]['maara'];
-				$tunnit = $valmisteet[$valmiste['tuoteno']]['tunnit'];
-
-				// Määrää pienennetään (splitataan valmistus)
-				if ($maara < $valmiste['varattu']) {
-					throw new Exception("Virhe valmistuksen keskeytyksessä (ei jaettu)");
-				}
-				// Määrä on sama (valmistus on valmistettu kokonaan)
-				else if ($maara == $valmiste['varattu']) {
-					#echo "määrä sama! päivitetään vaan tila ja lisätään kommentit";
-
-				}
-				// Virhe
-				else {
-					throw new Exception("Valmistettava määrä ei voi olla suurempi kuin tilattu määrä");
-				}
-			}
+		} catch (Exception $e) {
+			$errors = "VIRHE: {$e->getMessage()}";
 		}
-
-		// Päivitetään lopuksi tila
-		$valmistus->setTila($tila);
-	} catch (Exception $e) {
-		$errors = "VIRHE: {$e->getMessage()}";
 	}
 
 	// Palataan työjono näkymään

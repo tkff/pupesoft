@@ -190,6 +190,31 @@ class Valmistus {
 	}
 
 	/**
+	 * Keskeyttää valmistuksen
+	 *
+	 */
+	function keskeyta() {
+		global $kukarow;
+
+		// Voidaan keskeyttää vain jos työ on valmistuksessa
+		if($this->tila !== Valmistus::VALMISTUKSESSA) {
+			throw new Exception("Työtä ei voida keskeyttää");
+		}
+
+		// Keskeytetään työ
+		// Merkataan kalenteriin ylityotunnit, kommentit ja kaytetyttunnit
+		$query = "UPDATE kalenteri SET
+					kentta01='{$this->ylityotunnit}',
+					kentta02='{$this->kommentti}',
+					kentta03='{$this->kaytetyttunnit}'
+					WHERE yhtio='{$kukarow['yhtio']}'
+					AND otunnus='{$this->tunnus}'";
+		$result = pupe_query($query);
+
+		$this->setTila(Valmistus::KESKEYTETTY);
+	}
+
+	/**
 	 * Asettaa valmistuksen tilan
 	 * @param String $tila
 	 */

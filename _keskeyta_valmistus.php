@@ -1,4 +1,4 @@
-<div class='head'><?php echo t("Valmista tarkastukseen") ?></div>
+<div class='head'><?php echo t("Keskeytä työ") ?></div>
 
 <form method='POST'>
 <input type='hidden' name='tee' value='update'>
@@ -8,26 +8,30 @@
 <table>
 	<tr>
 		<th>Valmistus</th>
-		<td colspan='3'><?php echo $valmistus->tunnus() ?></td>
+		<td><?php echo $valmistus->tunnus() ?></td>
+	</tr>
+	<tr>
+		<th>Ylityötunnit</th>
+		<td><input type='text' name='ylityotunnit'></td>
+	</tr>
+	<tr>
+		<th>Käytetyt tunnit</th>
+		<td><input type='text' name='kaytetyttunnit'></td>
 	</tr>
 	<tr>
 		<th>Kommentti</th>
-		<td colspan='3'><input type='text' size='40'></td>
+		<td><input type='text' name='kommentti'></td>
 	</tr>
 
 	<tr>
 		<th>Valmiste</th>
 		<th>Määrä</th>
-		<th>Valmistettava Määrä</th>
-		<th>Ylityötunnit</th>
 	</tr>
 
 	<?php foreach($valmistus->tuotteet() as $valmiste) { ?>
 		<tr>
 			<td><?php echo $valmiste['nimitys'] ?></td>
 			<td><?php echo $valmiste['varattu'] ?></td>
-			<td><input type='text' name='valmisteet[<?php echo $valmiste['tuoteno'] ?>][maara]' value='<?php echo $valmiste['varattu'] ?>'></td>
-			<td><input type='text' name='valmisteet[<?php echo $valmiste['tuoteno'] ?>][tunnit]'></td>
 		</tr>
 	<?php } ?>
 
