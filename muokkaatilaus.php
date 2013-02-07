@@ -1356,7 +1356,7 @@
 			$miinus = 7;
 		}
 		else {
-			$query = "	SELECT lasku.tunnus tilaus, $asiakasstring asiakas, lasku.luontiaika,
+			$query = "	SELECT lasku.tunnus tilaus, $asiakasstring asiakas, lasku.luontiaika,lasku.kerayspvm,
 						if(kuka1.kuka is null, lasku.laatija, if (kuka1.kuka!=kuka2.kuka, concat_ws('<br>', kuka1.nimi, kuka2.nimi), kuka1.nimi)) laatija,
 						$seuranta $kohde  $toimaikalisa lasku.alatila, lasku.tila, lasku.tunnus, kuka1.extranet extra, lasku.mapvm, lasku.tilaustyyppi, lasku.label
 						FROM lasku use index (tila_index)
@@ -1450,7 +1450,16 @@
 			}
 			$excelrivi++;
 
-			echo "<th align='left'>".t("tyyppi")."</th><th class='back'></th></tr>";
+			echo "<th align='left'>".t("tyyppi")."</th>";
+
+			// Jos yhtiönparametri saldo_kasittely on asetettu tilaan
+			// "myytävissä-kpl lasketaan keräyspäivän mukaan", näytetään onko tuotteita saldoilla
+			// syötettynä keräyspäivänä.
+			if($yhtiorow['saldo_kasittely'] == 'T' and $toim == '') {
+				echo "<th>Riittääkö saldot keräyspäivänä?</th>";
+			}
+
+			echo "<th class='back'></th></tr>";
 
 			$lisattu_tunnusnippu  = array();
 			$toimitettavat_ennakot  = array();
@@ -1977,6 +1986,43 @@
 
 					if ($pitaako_varmistaa != "") {
 						$javalisa = "onSubmit = \"return lahetys_verify('$pitaako_varmistaa')\"";
+					}
+
+					// Tarkastetaan riittääkö saldo keräyspäivänä
+					if ($yhtiorow['saldo_kasittely'] == 'T' and $toim == '') {
+						$_query = "SELECT tuoteno, tilkpl FROM tilausrivi WHERE yhtio='{$kukarow['yhtio']}' AND otunnus={$row['tunnus']}";
+						$_result = pupe_query($_query);
+
+						$riittaako_saldo = true;
+						$puutteet = array();
+
+						echo "<td>";
+						while($rivi = mysql_fetch_assoc($_result)) {
+
+							list($saldo, $hyllyssa, $myytavissa) = saldo_myytavissa($rivi["tuoteno"], '', '', '', '', '', '', '', '', $row['kerayspvm']);
+
+							if ($rivi['tilkpl'] > $myytavissa) {
+								$puutteet[] = $rivi['tuoteno'];
+								$riittaako_saldo = false;
+							}
+						}
+
+						echo "<div id='div_{$row['tunnus']}' class='popup'>";
+							echo "Keräyspäivä: {$row['kerayspvm']}<br>";
+							foreach($puutteet as $puute) {
+								echo $puute . "<br>";
+							}
+						echo "</div>";
+
+						if ($riittaako_saldo) {
+							echo "Kyllä";
+						}
+						else {
+							echo "Ei";
+							echo " <img class='tooltip' id='{$row['tunnus']}' src='$palvelin2/pics/lullacons/info.png'>";
+						}
+
+						echo "</td>";
 					}
 
 					echo "<td class='back' nowrap>";
