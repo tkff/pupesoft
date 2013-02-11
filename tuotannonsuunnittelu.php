@@ -78,6 +78,12 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 		echo "<table>";
 		echo "<tr><th>Valmistus</th><td>{$valmistus->tunnus()}</td></tr>";
 
+		// Mahdollisuus muuttaa valmistuksen päivämääriä
+		echo "<tr><th>Aloitusaika</th>";
+		echo "<td><input type='text' name='pvmalku' value='{$valmistus->pvmalku}'></td></tr>";
+		echo "<tr><th>Lopetusaika</th>";
+		echo "<td><input type='text' name='pvmloppu' value='{$valmistus->pvmloppu}'></td></tr>";
+
 		// Haetaan valmisteet
 		foreach($valmistus->tuotteet() as $valmiste) {
 			echo "<tr>
@@ -178,6 +184,8 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 		if ($tila=='TK' or $tila=='VT' and $valmistus->getTila() == 'VA') {
 			// Tarkistetaan ja päivitetään käytetyt tunnit, ylityötunnit ja kommentti
 			$query = "UPDATE kalenteri SET
+						pvmalku='$pvmalku',
+						pvmloppu='$pvmloppu',
 						kentta01='{$ylityotunnit}',
 						kentta02='{$kommentti}',
 						kentta03='{$kaytetyttunnit}'
@@ -323,6 +331,7 @@ if ($tee == '') {
 
 	// Hetaan valmistuslinjat avainsanoista
 	$linjat = hae_valmistuslinjat();
+
 	// Haetaan valmistukset
 	$valmistukset = Valmistus::all();
 
@@ -348,6 +357,7 @@ if ($tee == '') {
 		echo "<td>" . ($valmistus->kesto() - $valmistus->kaytetty()) . "</td>";
 
 		echo "<td>";
+
 		// Valmistuslinjan valintalaatikko
 		if ($valmistus->valmistuslinja() == 0 or $valmistus->valmistuslinja() == NULL) {
 			echo "<form method='post' name='lisaa_tyojonoon'>";

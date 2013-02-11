@@ -49,7 +49,6 @@ class Valmistus {
 			while($tuote = mysql_fetch_assoc($result)) {
 				$this->tuotteet[] = $tuote;
 			}
-
 		}
 
 		// Palautetaan tuotteet array
@@ -100,13 +99,13 @@ class Valmistus {
 			// tarkistettava paljon ne vähentävät raaka-aineiden saldoa.
 			$muut_query = "SELECT tilausrivi.otunnus, COALESCE(sum(tilausrivi.varattu), 0) AS varattu
 			            FROM kalenteri
-			                  JOIN lasku ON (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
-			                  JOIN tilausrivi ON (lasku.yhtio=tilausrivi.yhtio AND lasku.tunnus=tilausrivi.otunnus)
+			                JOIN lasku ON (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
+			                JOIN tilausrivi ON (lasku.yhtio=tilausrivi.yhtio AND lasku.tunnus=tilausrivi.otunnus)
 			            WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
-			                  AND kalenteri.tyyppi='valmistus'
-			                  AND tilausrivi.tyyppi='V'
-			                  AND tilausrivi.tuoteno='{$raaka_aine['tuoteno']}'
-			                  AND kalenteri.pvmalku < '$aloitus_pvm'";
+			                AND kalenteri.tyyppi='valmistus'
+			                AND tilausrivi.tyyppi='V'
+			                AND tilausrivi.tuoteno='{$raaka_aine['tuoteno']}'
+			                AND kalenteri.pvmalku < '$aloitus_pvm'";
 			$muut_valmistukset_result = pupe_query($muut_query);
 			$muut_valmistukset = mysql_fetch_assoc($muut_valmistukset_result);
 			#echo "muut: $muut_valmistukset[varattu] ($muut_valmistukset[otunnus])<br>";
@@ -305,12 +304,12 @@ class Valmistus {
 
 				// Valmis tarkastukseen
 				case Valmistus::VALMIS_TARKASTUKSEEN:
-					echo "valmistus valmis tarkastukseen";
+					#echo "valmistus valmis tarkastukseen";
 					break;
 
 				// Tarkastettu
 				case Valmistus::TARKASTETTU:
-					echo "valmistus merkattu tarkastetuksi!";
+					#echo "valmistus merkattu tarkastetuksi!";
 					break;
 
 				// Muut
@@ -371,6 +370,8 @@ class Valmistus {
 						lasku.ytunnus,
 						lasku.tunnus,
 						lasku.valmistuksen_tila as tila,
+						kalenteri.pvmalku,
+						kalenteri.pvmloppu,
 						kalenteri.henkilo as valmistuslinja,
 						kalenteri.kentta01 as ylityotunnit,
 						kalenteri.kentta02 as kommentti,

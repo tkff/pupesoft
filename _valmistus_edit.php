@@ -12,7 +12,19 @@
 	</tr>
 	<tr>
 		<th>Kommentti</th>
-		<td colspan='3'><input type='text' size='40'></td>
+		<td colspan='3'><input type='text' name='kommentti' size='40'></td>
+	</tr>
+	<tr>
+		<th>Ylityötunnit</th>
+		<td colspan='3'><input type='text' name='ylityotunnit'></td>
+	</tr>
+	<tr>
+		<th>Aloitusaika</th>
+		<td colspan='3'><input type='text' name='pvmalku' value='<?php echo $valmistus->pvmalku ?>'></td>
+	</tr>
+	<tr>
+		<th>Lopetusaika</th>
+		<td colspan='3'><input type='text' name='pvmloppu' value='<?php echo $valmistus->pvmloppu ?>'></td>
 	</tr>
 
 	<tr>

@@ -33,7 +33,7 @@ if (isset($tee) and $tee == 'verify') {
 }
 
 /**
- * Jos tullaan lomaakkeelta, päivitetään valmistuksen tiedot
+ * Jos tullaan lommakkeelta, päivitetään valmistuksen tiedot
  */
 if (isset($tee) and $tee == 'update') {
 
@@ -49,7 +49,7 @@ if (isset($tee) and $tee == 'update') {
 		$valmistus->keskeyta();
 	}
 	// Merkataan valmiiksi
-	else {
+	elseif ($tila == 'VT') {
 		// Loopataan päivitettävät valmisteet läpi ja tarkistetaan syötetyt määrät
 		// Splitataan tarvittaessa
 		try {
@@ -76,7 +76,6 @@ if (isset($tee) and $tee == 'update') {
 					// Määrä on sama (valmistus on valmistettu kokonaan)
 					else if ($maara == $valmiste['varattu']) {
 						#echo "määrä sama! päivitetään vaan tila ja lisätään kommentit";
-
 					}
 					// Virhe
 					else {
@@ -85,9 +84,26 @@ if (isset($tee) and $tee == 'update') {
 				}
 			}
 
-			// Päivitetään lopuksi tila
+			// päivitetään kalenterin tiedot
+			$query = "UPDATE kalenteri
+						SET kentta01='{$ylityotunnit}',
+						kentta02='{$kommentti}',
+						pvmalku='{$pvmalku}',
+						pvmloppu='{$pvmloppu}'
+						WHERE yhtio='{$kukarow['yhtio']}'
+						AND otunnus='{$tunnus}'";
+			pupe_query($query);
+
 			$valmistus->setTila($tila);
 
+		} catch (Exception $e) {
+			$errors = "VIRHE: {$e->getMessage()}";
+		}
+	}
+	else {
+		try {
+			// Päivitetään vain tila
+			$valmistus->setTila($tila);
 		} catch (Exception $e) {
 			$errors = "VIRHE: {$e->getMessage()}";
 		}
