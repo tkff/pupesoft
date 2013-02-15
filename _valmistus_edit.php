@@ -24,7 +24,7 @@
 	</tr>
 	<tr>
 		<th>Lopetusaika</th>
-		<td colspan='3'><input type='text' name='pvmloppu' value='<?php echo $valmistus->pvmloppu ?>'></td>
+		<td colspan='3'><input type='text' name='pvmloppu' value='<?php echo date('Y-m-d H:i:s', round_time(strtotime('now'))) ?>'></td>
 	</tr>
 
 	<tr>

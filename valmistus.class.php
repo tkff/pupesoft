@@ -90,7 +90,7 @@ class Valmistus {
 		// Tarkistetaan kaikkien raaka-aineiden saldot
 		while ($raaka_aine = mysql_fetch_assoc($result)) {
 			$saldo = array();
-			list($saldo['saldo'], $saldo['hyllyssa'], $saldo['myytavissa']) = saldo_myytavissa($raaka_aine['tuoteno']);
+			list($saldo['saldo'], $saldo['hyllyssa'], $saldo['myytavissa']) = saldo_myytavissa($raaka_aine['tuoteno'],'','','','','','','', $aloitus_pvm);
 
 			#echo "tuoteno: $raaka_aine[tuoteno] saldo: $saldo[saldo] hyllyssa: $saldo[hyllyssa] myytavissa: $saldo[myytavissa]<br>";
 
@@ -291,6 +291,8 @@ class Valmistus {
 								SET pvmalku='{$pvmalku}', pvmloppu='{$pvmloppu}'
 								WHERE yhtio='{$kukarow['yhtio']}'
 								AND otunnus='{$this->tunnus}'";
+
+					// P‰ivitet‰‰n laskun ja tilausrivin ker‰ysp‰iv‰t?
 
 					if (! pupe_query($query)) {
 						throw new Exception("Valmistuksen aikoja ei p‰ivitetty");

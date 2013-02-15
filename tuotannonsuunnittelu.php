@@ -82,7 +82,8 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 		echo "<tr><th>Aloitusaika</th>";
 		echo "<td><input type='text' name='pvmalku' value='{$valmistus->pvmalku}'></td></tr>";
 		echo "<tr><th>Lopetusaika</th>";
-		echo "<td><input type='text' name='pvmloppu' value='{$valmistus->pvmloppu}'></td></tr>";
+		echo "<td><input type='text' name='pvmloppu' value='".date('Y-m-d H:i:s', round_time(strtotime('now')))."'>";
+		echo"</td></tr>";
 
 		// Haetaan valmisteet
 		foreach($valmistus->tuotteet() as $valmiste) {
