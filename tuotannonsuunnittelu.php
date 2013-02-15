@@ -183,6 +183,15 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 		}
 
 		if ($tila=='TK' or $tila=='VT' and $valmistus->getTila() == 'VA') {
+
+			if ($pvmalku == '') {
+				$pvmalku = $valmistus->alkupvm();
+			}
+
+			if ($pvmloppu == '') {
+				$pvmloppu = $valmistus->loppupvm();
+			}
+
 			// Tarkistetaan ja päivitetään käytetyt tunnit, ylityötunnit ja kommentti
 			$query = "UPDATE kalenteri SET
 						pvmalku='$pvmalku',
@@ -383,9 +392,9 @@ if ($tee == '') {
 		// Valmistuksen puuttuvat raaka-aineet
 		echo "<td>";
 
-		// foreach($valmistus->puutteet() as $tuoteno => $maara) {
-		// 	echo "tuoteno: $tuoteno saldo: $maara<br>";
-		// }
+		foreach($valmistus->puutteet() as $tuoteno => $maara) {
+			echo "tuoteno: $tuoteno saldo: $maara<br>";
+		}
 
 		echo "</td>";
 		echo "</tr>";
