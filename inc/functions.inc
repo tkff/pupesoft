@@ -1369,6 +1369,7 @@ if (!function_exists("saldo_myytavissa")) {
 										ifnull(sum(if (tilausrivi.keratty!='', tilausrivi.varattu, 0)),0) keratty
 										FROM tilausrivi use index (yhtio_tyyppi_tuoteno_varattu)
 										JOIN sarjanumeroseuranta  use index (yhtio_tuoteno_sarjanumero) ON sarjanumeroseuranta.yhtio = tilausrivi.yhtio
+										JOIN lasku on (tilausrivi.yhtio=lasku.yhtio and tilausrivi.otunnus=lasku.tunnus)
 										and sarjanumeroseuranta.tuoteno 			= tilausrivi.tuoteno
 										and sarjanumeroseuranta.hyllyalue 			= tilausrivi.hyllyalue
 										and sarjanumeroseuranta.hyllynro  			= tilausrivi.hyllynro
@@ -1391,11 +1392,13 @@ if (!function_exists("saldo_myytavissa")) {
 							$query = "	SELECT
 										ifnull(sum(if (tilausrivi.keratty!='', tilausrivi.varattu, 0)),0) keratty
 										FROM tilausrivi use index (yhtio_tyyppi_tuoteno_varattu)
+										JOIN lasku on (tilausrivi.yhtio=lasku.yhtio and tilausrivi.otunnus=lasku.tunnus)
 										WHERE tilausrivi.yhtio = '$yhtiolisa'
 										and tilausrivi.tyyppi in ('L','G','V')
 										and (tilausrivi.perheid2 = 0 or tilausrivi.perheid2=tilausrivi.tunnus)
 										and tilausrivi.tuoteno = '$tuoteno'
 										and tilausrivi.varattu > 0
+										and lasku.valmistuksen_tila=''
 										and tilausrivi.hyllyalue = '$row[hyllyalue]'
 										and tilausrivi.hyllynro  = '$row[hyllynro]'
 										and tilausrivi.hyllyvali = '$row[hyllyvali]'

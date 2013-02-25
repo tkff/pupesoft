@@ -69,7 +69,12 @@ class Valmistus {
 		return $raaka_aineet;
 	}
 
-	/** etsit‰‰n valmistuksen puutteet
+	/**
+	 * Laskee valmistuksen raaka-aineiden saldot ja palauttaa riitt‰m‰tt‰mien tuotteiden tuotenumeron
+	 * ja saldot. Huomio muiden valmistusten varaamat saldot ja mahdolliset ostotilaukset jotka saapuvat
+	 * ennen kyseisen valmistuksen aloitushetke‰.
+	 *
+	 * @return array puutteet Puuttuvat raaka-aineet ja niiden saldot.
 	*/
 	function puutteet() {
 		global $kukarow;
@@ -110,20 +115,27 @@ class Valmistus {
 			$muut_valmistukset = mysql_fetch_assoc($muut_valmistukset_result);
 			#echo "muut: $muut_valmistukset[varattu] ($muut_valmistukset[otunnus])<br>";
 
+			error_log("Tuoteno: " . $raaka_aine['tuoteno']);
+			error_log("Muut valmistukset: " . $muut_valmistukset['varattu']);
+
 			// Haetaan raaka-aineen ostotilauksia, jotka vaikuttavat valmistuksen aloitukseen
 			$query = "SELECT COALESCE(sum(varattu), 0) AS varattu
 			            FROM tilausrivi
 			            WHERE yhtio='{$kukarow['yhtio']}'
 			            AND tuoteno='{$raaka_aine['tuoteno']}'
 			            AND tyyppi='O'
-			            AND kerattyaika != '0000-00-00 00:00:00'
+			            #AND kerattyaika != '0000-00-00 00:00:00'
 			            AND kerattyaika < '$aloitus_pvm'";
 			$ostotilaukset_result = pupe_query($query);
 			$ostotilaukset = mysql_fetch_assoc($ostotilaukset_result);
 
+			error_log("Ostotilaukset: " . $ostotilaukset['varattu']);
+
 			#echo "ostot: $ostotilaukset[varattu]<br>";
 
-			$_saldo = $saldo['myytavissa'] - $muut_valmistukset['varattu'] + $ostotilaukset['varattu'];
+			#$_saldo = $saldo['myytavissa'] - $muut_valmistukset['varattu'] + $ostotilaukset['varattu'] + $raaka_aine['tilkpl'];
+			#$_saldo = $saldo['myytavissa'] - $muut_valmistukset['varattu'] + $ostotilaukset['varattu'];
+			$_saldo = $saldo['myytavissa'];
 
 			if ($_saldo <= $raaka_aine['varattu']) {
 				$puutteet[$raaka_aine['tuoteno']] = $_saldo;
@@ -256,7 +268,6 @@ class Valmistus {
 									WHERE yhtio='{$kukarow['yhtio']}'
 									AND otunnus='{$this->tunnus}'";
 						pupe_query($query);
-
 					}
 
 					break;
@@ -351,7 +362,8 @@ class Valmistus {
 					WHERE lasku.yhtio='{$kukarow['yhtio']}'
 					AND lasku.valmistuksen_tila in ('OV', 'TK')
 					AND lasku.tila='V'
-					AND lasku.alatila in ('J', 'C')";
+					AND lasku.alatila in ('J', 'C')
+					ORDER by pvmalku";
 		$result = pupe_query($query);
 
 		$valmistukset = array();

@@ -182,6 +182,7 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 			}
 		}
 
+		// Jos valmistuksessa oleva työ keskeytetään tai merkataan valmiiksi
 		if ($tila=='TK' or $tila=='VT' and $valmistus->getTila() == 'VA') {
 
 			if ($pvmalku == '') {
@@ -211,12 +212,12 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 			} catch (Exception $e) {
 				$errors .= "<font class='error'>Valmistuksen tilan muuttaminen epäonnistui. <br>{$e->getMessage()}</font>";
 			}
-
 		}
 
 		$tee = '';
 	}
 
+	// Rakennetaan valmistuslinja uudelleen
 	rebuild_valmistuslinjat();
 }
 

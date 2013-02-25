@@ -145,6 +145,8 @@ function lisaa_valmistus($valmistus, $linja) {
                         tyyppi      = 'valmistus',
                         otunnus     = $valmistus[tunnus]";
             $result = pupe_query($query);
+
+            // P‰ivitet‰‰n laskun ja tilausrivin ker‰yspvm
       }
 }
 
@@ -344,8 +346,22 @@ function rebuild_valmistuslinjat($from = 'now') {
                   // P‰ivitet‰‰n uudet p‰iv‰m‰‰r‰t tietokantaan
                   $query = "UPDATE kalenteri
                               SET pvmalku='{$current['pvmalku']}', pvmloppu='{$current['pvmloppu']}'
-                              WHERE tunnus='{$current['tunnus']}'";
+                              WHERE yhtio='{$kukarow['yhtio']}'
+                              AND tunnus='{$current['tunnus']}'";
                   pupe_query($query);
+
+                  // P‰ivitet‰‰n laskulle uusi kerayspvm ja tilausrivieille uusi toimaika
+                  $lasku_query = "UPDATE lasku
+                              SET kerayspvm='{$current['pvmloppu']}'
+                              WHERE yhtio='{$kukarow['yhtio']}'
+                              AND tunnus={$current['otunnus']}";
+                  $result = pupe_query($lasku_query);
+
+                  $tilausrivi_query = "UPDATE tilausrivi
+                              SET kerayspvm='{$current['pvmloppu']}'
+                              WHERE yhtio='{$kukarow['yhtio']}'
+                              AND otunnus={$current['otunnus']}";
+                  $result = pupe_query($tilausrivi_query);
 
                   // Laitetaan kierroksen valmistus edellinen muuttujaan
                   $previous = $current;
@@ -423,7 +439,7 @@ function puuttuvat_raaka_aineet($tunnus, $aloitus_pvm = 'now') {
                         WHERE yhtio='{$kukarow['yhtio']}'
                         AND tuoteno='{$raaka_aine['tuoteno']}'
                         AND tyyppi='O'
-                        AND kerattyaika != '0000-00-00 00:00:00'
+                        #AND kerattyaika != '0000-00-00 00:00:00'
                         AND kerattyaika < '$aloitus_pvm'"
                         ;
             $ostotilaukset_result = pupe_query($query);
