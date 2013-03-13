@@ -292,7 +292,7 @@ if ($tee == '') {
 	// Valmistuslinjojen info popup
 	echo "<div id='bubble'>";
 	echo "<div id='header'></div>";
-	echo "<div id='content'></div>";
+	echo "<div id='content' style='height:300px; overflow:auto;'></div>";
 	echo "<form action='tuotannonsuunnittelu.php?method=update' method='post' id='toiminto' name='bubble'>
 			<input type='hidden' name='tunnus' id='valmistuksen_tunnus'>
 			<input type='hidden' name='tee' value='paivita'>

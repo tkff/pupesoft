@@ -1990,7 +1990,11 @@
 
 					// Tarkastetaan riittääkö saldo keräyspäivänä
 					if ($yhtiorow['saldo_kasittely'] == 'T' and $toim == '') {
-						$_query = "SELECT tuoteno, tilkpl FROM tilausrivi WHERE yhtio='{$kukarow['yhtio']}' AND otunnus={$row['tunnus']}";
+						$_query = "SELECT tuoteno, tilkpl
+									FROM tilausrivi
+									WHERE yhtio='{$kukarow['yhtio']}'
+									AND otunnus={$row['tunnus']}
+									AND yksikko!=''";
 						$_result = pupe_query($_query);
 
 						$riittaako_saldo = true;
