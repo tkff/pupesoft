@@ -18235,10 +18235,10 @@ if (!function_exists("pupesoft_sahkoposti")) {
 		$email_body 	= isset($parametrit["body"]) ? $parametrit["body"] : "";
 
 		// Liitetiedostoja tulee parametreissä arrayna
-		$liitteet		= (isset($parametrit["attachements"]) and is_array($parametrit["attachements"])) ? $parametrit["attachements"] : "";
+		$liitteet		= (isset($parametrit["attachements"]) and is_array($parametrit["attachements"])) ? $parametrit["attachements"] : array();
 
 		// Kaikki pitää tulla kunnossa (paitsi body ja cc)
-		if ($email_to == "" or $email_subject == "" or $email_ctype == "" or $liitteet == "") {
+		if ($email_to == "" or $email_subject == "" or $email_ctype == "") {
 			return false;
 		}
 
@@ -18338,7 +18338,9 @@ if (!function_exists("pupesoft_sahkoposti")) {
 
 		$boob = mail($email_to, mb_encode_mimeheader($email_subject, "ISO-8859-1", "Q"), $content, $header, "-f {$yhtiorow["postittaja_email"]}");
 
-		if ($boob === FALSE) echo t("Sähköpostin lähetys epäonnistui").": $email_to<br>";
+		if ($boob === FALSE) {
+			echo t("Sähköpostin lähetys epäonnistui").": $email_to<br>";
+		}
 
 		return $boob;
 	}
