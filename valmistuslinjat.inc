@@ -145,8 +145,6 @@ function lisaa_valmistus($valmistus, $linja) {
                         tyyppi      = 'valmistus',
                         otunnus     = $valmistus[tunnus]";
             $result = pupe_query($query);
-
-            // P‰ivitet‰‰n laskun ja tilausrivin ker‰yspvm
       }
 }
 
@@ -276,7 +274,11 @@ function rebuild_valmistuslinjat($from = 'now') {
      # echo "rakennetaan valmistuslinja uudelleen alkaen: $from <br>";
 
       // Hetaan kaikki valmistuslinjat
-      $query = "SELECT selite FROM avainsana WHERE yhtio='{$kukarow['yhtio']}' AND laji='VALMISTUSLINJA' ORDER BY selite";
+      $query = "SELECT selite
+                  FROM avainsana
+                  WHERE yhtio = '{$kukarow['yhtio']}'
+                  AND laji    = 'VALMISTUSLINJA'
+                  ORDER BY selite";
       $valmistuslinjat_result = pupe_query($query);
 
       // J‰rjestell‰‰n linja kerrallaan
@@ -286,9 +288,9 @@ function rebuild_valmistuslinjat($from = 'now') {
             $query = "SELECT *, kalenteri.tunnus as tunnus
                         FROM kalenteri
                         JOIN lasku ON (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
-                        WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
-                        AND henkilo='{$linja['selite']}'
-                        AND pvmloppu > '$from'
+                        WHERE kalenteri.yhtio = '{$kukarow['yhtio']}'
+                        AND henkilo           = '{$linja['selite']}'
+                        AND pvmloppu          > '$from'
                         AND valmistuksen_tila not in('VT', 'TA')
                         ORDER BY pvmalku";
             $result = pupe_query($query);
@@ -345,22 +347,24 @@ function rebuild_valmistuslinjat($from = 'now') {
 
                   // P‰ivitet‰‰n uudet p‰iv‰m‰‰r‰t tietokantaan
                   $query = "UPDATE kalenteri
-                              SET pvmalku='{$current['pvmalku']}', pvmloppu='{$current['pvmloppu']}'
-                              WHERE yhtio='{$kukarow['yhtio']}'
-                              AND tunnus='{$current['tunnus']}'";
+                              SET pvmalku = '{$current['pvmalku']}', pvmloppu='{$current['pvmloppu']}'
+                              WHERE yhtio = '{$kukarow['yhtio']}'
+                              AND tunnus  = '{$current['tunnus']}'";
                   pupe_query($query);
 
                   // P‰ivitet‰‰n laskulle uusi kerayspvm ja tilausrivieille uusi toimaika
-                  $lasku_query = "UPDATE lasku
-                              SET kerayspvm='{$current['pvmloppu']}'
-                              WHERE yhtio='{$kukarow['yhtio']}'
-                              AND tunnus={$current['otunnus']}";
+                  $lasku_query = "UPDATE lasku SET
+                                    kerayspvm   = '{$current['pvmalku']}',
+                                    toimaika    = '{$current['pvmloppu']}'
+                                    WHERE yhtio = '{$kukarow['yhtio']}'
+                                    AND tunnus  = {$current['otunnus']}";
                   $result = pupe_query($lasku_query);
 
-                  $tilausrivi_query = "UPDATE tilausrivi
-                              SET kerayspvm='{$current['pvmloppu']}'
-                              WHERE yhtio='{$kukarow['yhtio']}'
-                              AND otunnus={$current['otunnus']}";
+                  $tilausrivi_query = "UPDATE tilausrivi SET
+                                          kerayspvm   = '{$current['pvmalku']}',
+                                          toimaika    = '{$current['pvmloppu']}'
+                                          WHERE yhtio = '{$kukarow['yhtio']}'
+                                          AND otunnus = {$current['otunnus']}";
                   $result = pupe_query($tilausrivi_query);
 
                   // Laitetaan kierroksen valmistus edellinen muuttujaan
@@ -381,40 +385,33 @@ function puuttuvat_raaka_aineet($tunnus, $aloitus_pvm = 'now') {
       // Valmistuksen p‰iv‰m‰‰r‰, mink‰ mukaan muut saldot tarkistetaan
       $aloitus_pvm = date('Y-m-d H:i:s', strtotime($aloitus_pvm));
 
-      // Haetaan laskun tiedot
-      $query = "SELECT * FROM lasku WHERE yhtio='{$kukarow['yhtio']}' and tunnus='$tunnus'";
+      // Haetaan laskun tiedot (valmistuksen otsikko)
+      $query = "SELECT *
+                  FROM lasku
+                  JOIN kalenteri on (lasku.yhtio=kalenteri.yhtio and lasku.tunnus=kalenteri.otunnus)
+                  WHERE lasku.yhtio = '{$kukarow['yhtio']}'
+                  AND lasku.tunnus  = '$tunnus'";
       $result = pupe_query($query);
       $lasku = mysql_fetch_assoc($result);
 
       // Haetaan valmistuksen raaka-aineet
       $query = "SELECT *
-                        FROM tilausrivi
-                        WHERE yhtio='{$kukarow['yhtio']}'
-                        AND otunnus='{$tunnus}'
-                        AND tuoteno!='TY÷'
-                        AND tyyppi='V'";
+                  FROM tilausrivi
+                  WHERE yhtio = '{$kukarow['yhtio']}'
+                  AND otunnus = '{$tunnus}'
+                  AND tuoteno != 'TY÷'
+                  AND tyyppi  = 'V'";
       $result = pupe_query($query);
 
-      $html = "<table border=1>
-                  <tr>
-                  <th></th>
-                  <th>tuoteno</th>
-                  <th>myytavissa</th>
-                  <th>varattu</th>
-                  <th>muut_valmistukset</th>
-                  <th>ostotilaukset</th>
-                  </tr>";
-
+      // Loopataan raaka-aineet l‰pi ja tarkistetaan niiden saldo.
       while($raaka_aine = mysql_fetch_assoc($result)) {
 
             $saldo = array();
-            list($saldo['saldo'], $saldo['hyllyssa'], $saldo['myytavissa']) = saldo_myytavissa($raaka_aine['tuoteno']);
 
-            $html .= "<tr>
-                        <td>saldo: {$saldo['saldo']}, hyllyssa: {$saldo['hyllyssa']}, myytavissa: {$saldo['myytavissa']}</td>
-                        <td>{$raaka_aine['tuoteno']} {$raaka_aine['yksikko']}</td>
-                        <td>{$saldo['myytavissa']}</td>
-                        <td><b>{$raaka_aine['varattu']}</b></td>";
+            // Haetaan raaka-aineiden saldot valmistuksen aloitus p‰iv‰n‰.
+            // Sis‰lt‰‰ kaikkien t‰m‰n valmistuksen aloitusp‰iv‰‰ aiemmat valmistukset KAIKILTA linjoilta.
+            // HUOM! saldo_myytavissa palauttaa vain haluttua p‰iv‰‰ aiemmat saldot? pvm <= $kysytty_pvm
+            list($saldo['saldo'], $saldo['hyllyssa'], $saldo['myytavissa']) = saldo_myytavissa($raaka_aine['tuoteno'], '', '', '', '', '', '', '', '', $aloitus_pvm);
 
             // Varatut kappaleet valmistuksilta jotka ovat jo valmistuslinjalla.
             // Valmistuslinjalla olevat valmistukset varaavat saldoa ja uuden valmistuksen on
@@ -424,53 +421,46 @@ function puuttuvat_raaka_aineet($tunnus, $aloitus_pvm = 'now') {
                               JOIN lasku ON (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
                               JOIN tilausrivi ON (lasku.yhtio=tilausrivi.yhtio AND lasku.tunnus=tilausrivi.otunnus)
                         WHERE kalenteri.yhtio='{$kukarow['yhtio']}'
-                              AND kalenteri.tyyppi='valmistus'
-                              AND tilausrivi.tyyppi='V'
-                              AND tilausrivi.tuoteno='{$raaka_aine['tuoteno']}'
-                              AND kalenteri.pvmalku < '$aloitus_pvm'";
+                              AND kalenteri.tyyppi   = 'valmistus'
+                              AND tilausrivi.tyyppi  = 'V'
+                              AND tilausrivi.tuoteno = '{$raaka_aine['tuoteno']}'
+                              AND kalenteri.pvmalku  <= '$aloitus_pvm'
+                              AND kalenteri.henkilo  != {$lasku['henkilo']}";
+
             $muut_valmistukset_result = pupe_query($query);
             $muut_valmistukset = mysql_fetch_assoc($muut_valmistukset_result);
-
-            $html .= "<td>{$muut_valmistukset['varattu']}</td>";
 
             // Haetaan raaka-aineen ostotilauksia, jotka vaikuttavat valmistuksen aloitukseen
             $query = "SELECT COALESCE(sum(varattu), 0) AS varattu
                         FROM tilausrivi
-                        WHERE yhtio='{$kukarow['yhtio']}'
-                        AND tuoteno='{$raaka_aine['tuoteno']}'
-                        AND tyyppi='O'
-                        #AND kerattyaika != '0000-00-00 00:00:00'
-                        AND kerattyaika < '$aloitus_pvm'"
-                        ;
+                        WHERE yhtio       = '{$kukarow['yhtio']}'
+                        AND tuoteno       = '{$raaka_aine['tuoteno']}'
+                        AND tyyppi        = 'O'
+                        # AND kerattyaika != '0000-00-00 00:00:00'
+                        AND kerattyaika   < '$aloitus_pvm'";
+
             $ostotilaukset_result = pupe_query($query);
             $ostotilaukset = mysql_fetch_assoc($ostotilaukset_result);
 
-            $html .= "<td>{$ostotilaukset['varattu']}</td>";
-
-            /*
-            Raaka-aineen riiton laskentakaava on:
-            "Saldo nyt"
-            - "Varatut kappaleet valmistuksilta, joiden p‰iv‰ on vanhempi kun ko. p‰iv‰"
-            - "Varatut kappaleet myyntitilauksilta, joiden p‰iv‰ on vanhempi kun ko. p‰iv‰"
-            + "Vahvistetut kappaleet ostotilausriveilta, joiden saapumisp‰iv‰ on vanhempi kun ko. p‰iv‰".
+            /**
+                  Raaka-aineen riiton laskentakaava:
+                  "Saldo nyt"
+                  - "Varatut kappaleet valmistuksilta, joiden p‰iv‰ on vanhempi kun ko. p‰iv‰"
+                  - "Varatut kappaleet myyntitilauksilta, joiden p‰iv‰ on vanhempi kun ko. p‰iv‰"
+                  + "Vahvistetut kappaleet ostotilausriveilta, joiden saapumisp‰iv‰ on vanhempi kun ko. p‰iv‰".
             */
+
             // saldo_myytavissa sis‰lt‰‰ valmistuksen varaamat raaka-aineet ja myyntitilausten varaamat kappaleet.
             // Huomioidaan vain muiden valmistusten varaamat ja mahdollisten ostotilausten vaikutus saldoihin.
-            $raaka_aine_saldo = $saldo['myytavissa']- $muut_valmistukset['varattu'] + $ostotilaukset['varattu'];
+            # $raaka_aine_saldo = $saldo['myytavissa'] - $muut_valmistukset['varattu'] + $ostotilaukset['varattu'];
+            $raaka_aine_saldo = $saldo['myytavissa'];
 
+            // Jos raaka_aineella on saldoa v‰hemmin kuin valmistuksen varaama saldo niin lis‰t‰‰n raaka-aine puutteeksi
             if ($raaka_aine_saldo <= $raaka_aine['varattu']) {
+                  // V‰hennet‰‰n valmistuksen aloitusp‰iv‰n saldosta valmistuksen varaama saldo
                   $vajaat_saldot[$raaka_aine['tuoteno']] = $raaka_aine_saldo;
-
-                  $html .= "<td>$raaka_aine_saldo (Raaka-aine ei riit‰!)</td>";
-            } else {
-                  $html .= "<td>$raaka_aine_saldo</td>";
             }
-            $html .= "</tr>";
       }
-
-      $html .= "</table>";
-
-      #echo $html;
 
       return $vajaat_saldot;
 }

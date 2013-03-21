@@ -95,9 +95,7 @@ class Valmistus {
 		// Tarkistetaan kaikkien raaka-aineiden saldot
 		while ($raaka_aine = mysql_fetch_assoc($result)) {
 			$saldo = array();
-			list($saldo['saldo'], $saldo['hyllyssa'], $saldo['myytavissa']) = saldo_myytavissa($raaka_aine['tuoteno'],'','','','','','','', $aloitus_pvm);
-
-			#echo "tuoteno: $raaka_aine[tuoteno] saldo: $saldo[saldo] hyllyssa: $saldo[hyllyssa] myytavissa: $saldo[myytavissa]<br>";
+			list($saldo['saldo'], $saldo['hyllyssa'], $saldo['myytavissa']) = saldo_myytavissa($raaka_aine['tuoteno'], '', '', '', '', '', '', '', '', $aloitus_pvm);
 
 			// Varatut kappaleet valmistuksilta jotka ovat jo valmistuslinjalla.
 			// Valmistuslinjalla olevat valmistukset varaavat saldoa ja uuden valmistuksen on
@@ -113,7 +111,6 @@ class Valmistus {
 			                AND kalenteri.pvmalku < '$aloitus_pvm'";
 			$muut_valmistukset_result = pupe_query($muut_query);
 			$muut_valmistukset = mysql_fetch_assoc($muut_valmistukset_result);
-			#echo "muut: $muut_valmistukset[varattu] ($muut_valmistukset[otunnus])<br>";
 
 			error_log("Tuoteno: " . $raaka_aine['tuoteno']);
 			error_log("Muut valmistukset: " . $muut_valmistukset['varattu']);
@@ -131,10 +128,6 @@ class Valmistus {
 
 			error_log("Ostotilaukset: " . $ostotilaukset['varattu']);
 
-			#echo "ostot: $ostotilaukset[varattu]<br>";
-
-			#$_saldo = $saldo['myytavissa'] - $muut_valmistukset['varattu'] + $ostotilaukset['varattu'] + $raaka_aine['tilkpl'];
-			#$_saldo = $saldo['myytavissa'] - $muut_valmistukset['varattu'] + $ostotilaukset['varattu'];
 			$_saldo = $saldo['myytavissa'];
 
 			if ($_saldo <= $raaka_aine['varattu']) {
