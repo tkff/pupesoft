@@ -118,20 +118,23 @@ function lisaa_valmistus($valmistus, $linja) {
 
       // Lasketaan loppuaika
       $kesto = valmistuksen_kesto($valmistus);
-      $end = laske_loppuaika($start, $kesto * 60, $linja);
+      $end   = laske_loppuaika($start, $kesto * 60, $linja);
 
-      $pvmalku = date('Y-m-d H:i:s', $start);
+      $pvmalku  = date('Y-m-d H:i:s', $start);
       $pvmloppu = date('Y-m-d H:i:s', $end);
 
       // Tarkistetaan onko työ jo kalenterissa (keskeytetty aiemmin)
-      $query = "SELECT * FROM kalenteri WHERE yhtio='{$kukarow['yhtio']}' AND otunnus='{$valmistus['tunnus']}'";
+      $query = "SELECT *
+                  FROM kalenteri
+                  WHERE yhtio = '{$kukarow['yhtio']}'
+                  AND otunnus = '{$valmistus['tunnus']}'";
       $result = pupe_query($query);
 
       if (mysql_num_rows($result) > 0) {
             $query = "UPDATE kalenteri SET
-                        henkilo='$linja'
-                        WHERE yhtio='{$kukarow['yhtio']}'
-                        AND otunnus={$valmistus['tunnus']}";
+                        henkilo     = '$linja'
+                        WHERE yhtio = '{$kukarow['yhtio']}'
+                        AND otunnus = {$valmistus['tunnus']}";
             $result = pupe_query($query);
       }
       else {
@@ -157,8 +160,9 @@ function valmistuksen_kesto($valmistus) {
       $query = "SELECT sum(varattu) as kesto, kalenteri.kentta03 as kaytetyttunnit
                   FROM tilausrivi
                   LEFT JOIN kalenteri on (kalenteri.yhtio=tilausrivi.yhtio and kalenteri.otunnus=tilausrivi.otunnus)
-                  WHERE tilausrivi.yhtio='{$kukarow['yhtio']}'
-                  AND tilausrivi.otunnus={$valmistus['tunnus']} AND yksikko='H'";
+                  WHERE tilausrivi.yhtio = '{$kukarow['yhtio']}'
+                  AND tilausrivi.otunnus = {$valmistus['tunnus']}
+                  AND yksikko            ='H'";
       $result = pupe_query($query);
       $kesto = mysql_fetch_assoc($result);
 
