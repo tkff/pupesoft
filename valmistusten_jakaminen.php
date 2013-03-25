@@ -64,3 +64,6 @@ if (!empty($errors))	{
 	echo t($errors);
 	echo "</font>";
 }
+
+// FOOTER
+require ("inc/footer.inc");

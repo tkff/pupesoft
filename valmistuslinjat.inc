@@ -632,14 +632,14 @@ function jaa_valmistus($tunnus, $params) {
                         // P‰ivitet‰‰n kopiolle tulevat tiedot
                         $copy = $original;
                         $copy['laatija'] = $kukarow['kuka'];
-                        $copy['luontiaika'] = 'now()';
+                        unset($copy['luontiaika']); // now() ilman hipsukoita, setataan viimeisen‰
                         $copy['muutospvm'] = '';
                         $copy['tunnus'] = '';
 
                         // Luodaan otsikon kopio
                         $copy_query = "INSERT INTO
-                                          lasku (".implode(", ", array_keys($copy)).")
-                                          VALUES('".implode("', '", array_values($copy)). "')";
+                                          lasku (".implode(", ", array_keys($copy)).", luontiaika)
+                                          VALUES('".implode("', '", array_values($copy)). "', now())";
 
                         if (!pupe_query($copy_query)) {
                               exit("Virhe laskun kopioinnissa, uutta laskua ei luotu");
