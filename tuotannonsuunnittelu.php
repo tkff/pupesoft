@@ -26,7 +26,8 @@ if (isset($method) and $method == 'move') {
 	$query = "SELECT *, lasku.tunnus
 				FROM kalenteri
 				JOIN lasku on (kalenteri.yhtio=lasku.yhtio AND kalenteri.otunnus=lasku.tunnus)
-				WHERE kalenteri.yhtio='{$kukarow['yhtio']}' AND kalenteri.otunnus='{$tunnus}'";
+				WHERE kalenteri.yhtio = '{$kukarow['yhtio']}'
+				AND kalenteri.otunnus = '{$tunnus}'";
 	$result = pupe_query($query);
 	$valittu_valmistus = mysql_fetch_assoc($result);
 
@@ -193,16 +194,22 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 				$pvmloppu = $valmistus->loppupvm();
 			}
 
-			// Tarkistetaan ja päivitetään käytetyt tunnit, ylityötunnit ja kommentti
-			$query = "UPDATE kalenteri SET
-						pvmalku='$pvmalku',
-						pvmloppu='$pvmloppu',
-						kentta01='{$ylityotunnit}',
-						kentta02='{$kommentti}',
-						kentta03='{$kaytetyttunnit}'
-						WHERE yhtio='{$kukarow['yhtio']}'
-						AND otunnus='{$tunnus}'";
-			pupe_query($query);
+			if ($kaytetyttunnit > $valmistus->kesto()) {
+				$errors .= "<font class='error'>" . t("Käytetty enemmän kuin valmistuksen kesto") . "</font>";
+			}
+
+			if (empty($errors)) {
+				// Tarkistetaan ja päivitetään käytetyt tunnit, ylityötunnit ja kommentti
+				$query = "UPDATE kalenteri SET
+							pvmalku     = '$pvmalku',
+							pvmloppu    = '$pvmloppu',
+							kentta01    = '{$ylityotunnit}',
+							kentta02    = '{$kommentti}',
+							kentta03    = '{$kaytetyttunnit}'
+							WHERE yhtio = '{$kukarow['yhtio']}'
+							AND otunnus = '{$tunnus}'";
+				pupe_query($query);
+			}
 		}
 
 		// Jos ei oo virheitä yritetään vaihtaa valmistuksen tilaa

@@ -42,11 +42,17 @@ if (isset($tee) and $tee == 'update') {
 
 	// Keskeytetään työ
 	if ($tila == 'TK') {
-		// Merkataan kommentti, ylityötunnit ja kaytetyttunnit talteen
-		$valmistus->kommentti = $kommentti;
-		$valmistus->ylityotunnit = $ylityotunnit;
-		$valmistus->kaytetyttunnit = $kaytetyttunnit;
-		$valmistus->keskeyta();
+
+		try {
+			// Merkataan kommentti, ylityötunnit ja kaytetyttunnit talteen
+			$valmistus->kommentti = $kommentti;
+			$valmistus->ylityotunnit = $ylityotunnit;
+			$valmistus->kaytetyttunnit = $kaytetyttunnit;
+			$valmistus->keskeyta();
+		} catch (Exception $e) {
+			$errors = "Virhe {$e->getMessage()}";
+		}
+
 	}
 	// Merkataan valmiiksi
 	elseif ($tila == 'VT') {
@@ -86,12 +92,12 @@ if (isset($tee) and $tee == 'update') {
 
 			// päivitetään kalenterin tiedot
 			$query = "UPDATE kalenteri
-						SET kentta01='{$ylityotunnit}',
-						kentta02='{$kommentti}',
-						pvmalku='{$pvmalku}',
-						pvmloppu='{$pvmloppu}'
-						WHERE yhtio='{$kukarow['yhtio']}'
-						AND otunnus='{$tunnus}'";
+						SET kentta01 = '{$ylityotunnit}',
+						kentta02     = '{$kommentti}',
+						pvmalku      = '{$pvmalku}',
+						pvmloppu     = '{$pvmloppu}'
+						WHERE yhtio  = '{$kukarow['yhtio']}'
+						AND otunnus  = '{$tunnus}'";
 			pupe_query($query);
 
 			$valmistus->setTila($tila);

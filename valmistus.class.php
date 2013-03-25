@@ -205,6 +205,10 @@ class Valmistus {
 			throw new Exception("Työtä ei voida keskeyttää");
 		}
 
+		if ($this->kaytetyttunnit > $this->kesto()) {
+			throw new Exception("Käytetty tunteja enemmän kuin valmistuksen kesto");
+		}
+
 		// Keskeytetään työ
 		// Merkataan kalenteriin ylityotunnit, kommentit ja kaytetyttunnit
 		$query = "UPDATE kalenteri SET
