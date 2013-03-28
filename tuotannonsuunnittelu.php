@@ -201,11 +201,11 @@ if ($tee == 'paivita' and isset($method) and $method == 'update') {
 			if (empty($errors)) {
 				// Tarkistetaan ja päivitetään käytetyt tunnit, ylityötunnit ja kommentti
 				$query = "UPDATE kalenteri SET
-							pvmalku     = '$pvmalku',
-							pvmloppu    = '$pvmloppu',
-							kentta01    = '{$ylityotunnit}',
-							kentta02    = '{$kommentti}',
-							kentta03    = '{$kaytetyttunnit}'
+							pvmalku  = '$pvmalku',
+							pvmloppu = '$pvmloppu',
+							kentta01 = '{$ylityotunnit}',
+							kentta02 = '{$kommentti}',
+							kentta03 = '{$kaytetyttunnit}'
 							WHERE yhtio = '{$kukarow['yhtio']}'
 							AND otunnus = '{$tunnus}'";
 				pupe_query($query);
