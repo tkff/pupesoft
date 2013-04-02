@@ -215,5 +215,3 @@ window.document.$formi.$kentta.focus();
 </script>";
 
 echo "</body></html>";
-
-?>

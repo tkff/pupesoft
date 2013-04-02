@@ -373,7 +373,10 @@ if ($session != '' or ((isset($verkkokauppa) and $verkkokauppa != "") and $login
 				exit;
 			}
 
-			$bool = setcookie("pupesoft_session", "", time()-432000, "/");
+			$bool = setcookie("pupesoft_session", "", time()-43200, "/");
+
+			// Taaksepäinyhteensopivuus. Poistetaan myös vanha cookie, jossa on path mukana
+			$bool = setcookie("pupesoft_session", "", time()-43200, parse_url($palvelin, PHP_URL_PATH));
 
 			if ($bool === FALSE) {
 				echo "Your browser does not seem to support cookies.";

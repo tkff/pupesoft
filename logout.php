@@ -9,6 +9,9 @@
 
 	$bool = setcookie("pupesoft_session", "", time()-43200, "/");
 
+	// Taaksepäinyhteensopivuus. Poistetaan myös vanha cookie, jossa on path mukana
+	$bool = setcookie("pupesoft_session", "", time()-43200, parse_url($palvelin, PHP_URL_PATH));
+	
 	echo "<html>
 		<head>
 	    	<title>$yhtiorow[nimi]</title>
@@ -37,4 +40,3 @@
 	}
 
 	echo "</body>\n</html>";
-?>
