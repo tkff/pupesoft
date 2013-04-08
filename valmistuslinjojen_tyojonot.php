@@ -145,17 +145,18 @@ if ($tee == '') {
 
 		echo "<table>";
 		echo "<tr>";
-		echo "<th colspan=4>" . t("Valmistuslinja") . ": " . $linja['selitetark']."</th>";
+		echo "<th colspan=5>" . t("Valmistuslinja") . ": " . $linja['selitetark']."</th>";
 		echo "</tr>";
 		echo "<tr>
 			<th>Tila</th>
 			<th>Nimitys</th>
+			<th>Viite</th>
 			<th>M‰‰r‰</th>
 			<th></th>
 			</tr>";
 
 		// Haetaan linjan 4 uusinta kalenterimerkinn‰t
-		$tyojono_query = "SELECT kalenteri.kuka, kalenteri.henkilo, nimitys, varattu, yksikko, pvmalku, pvmloppu, kalenteri.tunnus, lasku.valmistuksen_tila, kalenteri.otunnus
+		$tyojono_query = "SELECT kalenteri.kuka, kalenteri.henkilo, nimitys, varattu, yksikko, pvmalku, pvmloppu, kalenteri.tunnus, lasku.valmistuksen_tila, lasku.viesti, kalenteri.otunnus
 						FROM kalenteri
 						JOIN tilausrivi on (tilausrivi.yhtio=kalenteri.yhtio and tilausrivi.otunnus=kalenteri.otunnus)
 						JOIN lasku on (lasku.yhtio=kalenteri.yhtio and lasku.tunnus=kalenteri.otunnus)
@@ -181,6 +182,7 @@ if ($tee == '') {
 				echo "<tr>";
 				echo "<td>" . strtoupper($tilat[$tyojono['valmistuksen_tila']]) . "</td>";
 				echo "<td>" . $tyojono['nimitys'] . "</td>";
+				echo "<td>" . $tyojono['viesti'] ."</td>";
 				echo "<td>" . $tyojono['varattu'] . " " . $tyojono['yksikko'] . "</td>";
 
 				echo "<td>";
