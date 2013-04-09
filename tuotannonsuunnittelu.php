@@ -344,7 +344,6 @@ if ($tee == '') {
 	echo "<th>M‰‰r‰</th>";
 	echo "<th>Kesto</th>";
 	echo "<th></th>";
-	echo "<th>Puutteet</th>";
 	echo "</tr>";
 
 	// Hetaan valmistuslinjat avainsanoista
@@ -393,17 +392,8 @@ if ($tee == '') {
 			echo "</form>";
 		}
 		else {
-			echo $valmistus->alkupvm() . " - " . $valmistus->loppupvm();
+			echo "Valmistuslinjalla<br>" . $valmistus->alkupvm() . " - " . $valmistus->loppupvm();
 		}
-		echo "</td>";
-
-		// Valmistuksen puuttuvat raaka-aineet
-		echo "<td>";
-
-		foreach($valmistus->puutteet() as $tuoteno => $maara) {
-			echo "tuoteno: $tuoteno saldo: $maara<br>";
-		}
-
 		echo "</td>";
 		echo "</tr>";
 	}
