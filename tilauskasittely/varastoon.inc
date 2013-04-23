@@ -241,14 +241,6 @@ if ((($toiminto == "kaikkiok" and $tee == "varma") or ($toiminto == "kaikkiok" a
 }
 else {
 	// muuten rahtikulut valuutassa laskettuna kuluprosentin mukaan (laskurow.rahti on kuluprosentti, laskurow.summa on kohdistettujen rivien summa)
-	$query_ale_lisa = generoi_alekentta('O');
-
-	if ($toiminto == "kaikkiok") {
-		$maara_peruste = "and tilausrivi.varattu = 0 and tilausrivi.kpl != 0";
-	}
-	else {
-		$maara_peruste = "and tilausrivi.varattu <> 0";
-	}
 
 	// jos ollaan annettu t‰lle batchille kulusumma, k‰ytet‰‰nkin vaan sit‰!
 	if ($laskurow["rahti_huolinta"] != 0) {
@@ -256,6 +248,15 @@ else {
 		$rahtitapa  = t("Kulusumma");
 	}
 	else {
+		$query_ale_lisa = generoi_alekentta('O');
+
+		if ($toiminto == "kaikkiok") {
+			$maara_peruste = "and tilausrivi.varattu = 0 and tilausrivi.kpl != 0";
+		}
+		else {
+			$maara_peruste = "and tilausrivi.varattu <> 0";
+		}
+
 		// lasketaan nyt varastoon viet‰vien rivien summa yhteens‰
 		$query    = "	SELECT sum((tilausrivi.varattu + tilausrivi.kpl) * if(tuotteen_toimittajat.tuotekerroin <= 0 or tuotteen_toimittajat.tuotekerroin is null, 1, tuotteen_toimittajat.tuotekerroin) * tilausrivi.hinta * {$query_ale_lisa}) summa
 						FROM tilausrivi use index (uusiotunnus_index)
