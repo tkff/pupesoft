@@ -58,28 +58,32 @@ if ($tee == "update") {
 	// Hoidetaan pilkut pisteiksi....
 	$rahti_etu 				= str_replace (",", ".", $rahti_etu);
 	$rahti 					= str_replace (",", ".", $rahti);
-	$rahti_huolinta 		= str_replace (",", ".", $rahti_huolinta);
-	$erikoisale_saapuminen 	= str_replace (",", ".", $erikoisale_saapuminen);
+	$rahti_huolinta			= str_replace (",", ".", $rahti_huolinta);
+	$pyoristys_erot			= str_replace (",", ".", $pyoristys_erot);
+	$pyoristys_erot_alv		= str_replace (",", ".", $pyoristys_erot_alv);
+	$erikoisale_saapuminen	= str_replace (",", ".", $erikoisale_saapuminen);
 	$bruttopaino 			= str_replace (",", ".", $bruttopaino);
 
 	$toimaika 		= $vv."-".$kk."-".$pp;
 	$ultilno 		= tarvitaanko_intrastat($maa_lahetys, $maa_maara);
 
 	$query = "	UPDATE lasku
-				SET maa_lahetys 		= '$maa_lahetys',
-				maa_maara 				= '$maa_maara',
+				SET maa_lahetys			= '$maa_lahetys',
+				maa_maara				= '$maa_maara',
 				kauppatapahtuman_luonne = '$ktapahtuman_luonne',
-				kuljetusmuoto 			= '$kuljetusmuoto',
-				bruttopaino 			= '$bruttopaino',
-				rahti_huolinta 			= '$rahti_huolinta',
+				kuljetusmuoto			= '$kuljetusmuoto',
+				bruttopaino				= '$bruttopaino',
+				rahti_huolinta			= '$rahti_huolinta',
 				rahti_etu 				= '$rahti_etu',
-				rahti_etu_alv 			= '$rahti_etu_alv',
+				rahti_etu_alv			= '$rahti_etu_alv',
 				rahti 					= '$rahti',
-				erikoisale_saapuminen 	= '$erikoisale_saapuminen',
-				toimaika 				= '$toimaika',
-				kohdistettu 			= '$kohdistettu',
-				comments	 			= '$kommentti',
-				ultilno 				= '$ultilno'
+				pyoristys_erot			= '$pyoristys_erot',
+				pyoristys_erot_alv		= '$pyoristys_erot_alv',
+				erikoisale_saapuminen	= '$erikoisale_saapuminen',
+				toimaika				= '$toimaika',
+				kohdistettu				= '$kohdistettu',
+				comments				= '$kommentti',
+				ultilno					= '$ultilno'
 				WHERE tunnus = '$otunnus'
 				and yhtio 	 = '$kukarow[yhtio]'";
 	$result = mysql_query($query) or pupe_error($query);
@@ -291,6 +295,10 @@ if ($tee == "") {
 
 	if (abs($laskurow['rahti_etu']) > abs($llrow['vosumma_valuutassa'])) {
 		$lisatiedot = "<font class='message'>".t("VIRHE: Eturahti ei saa olla suurempi kuin laskujen yhteissumma")."!</font><br>";
+	}
+
+	if (abs($laskurow['pyoristys_erot']) > abs($llrow['vosumma_valuutassa'])) {
+		$lisatiedot = "<font class='message'>".t("VIRHE: Pyöristysero ei saa olla suurempi kuin laskujen yhteissumma")."!</font><br>";
 	}
 
 	echo "<tr><th valign='top'>".t("Nettopaino").":</th><td valign='top' colspan='3'><input type='text' name='bruttopaino' value='$laskurow[bruttopaino]'></td><td valign='top' class='back' width='450'>$lisamassa</td></tr>";
