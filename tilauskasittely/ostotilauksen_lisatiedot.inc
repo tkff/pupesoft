@@ -26,7 +26,7 @@ if ($tee == "update") {
 			$nappikeikalla = '';
 		}
 	}
-	
+
 	if ((float) $erikoisale_saapuminen < 0 or (float) $erikoisale_saapuminen > 100) {
 		echo "<font class='message'>".t("VIRHE: Erikoisale pitää olla alle 100% ja yli 0%")."!</font><br><br>";
 
@@ -295,6 +295,12 @@ if ($tee == "") {
 
 	echo "<tr><th valign='top'>".t("Nettopaino").":</th><td valign='top' colspan='3'><input type='text' name='bruttopaino' value='$laskurow[bruttopaino]'></td><td valign='top' class='back' width='450'>$lisamassa</td></tr>";
 	echo "<tr><th valign='top'>".t("Veroton")." ".t("Eturahti").":</th><td valign='top'><input type='text' name='rahti_etu' value='$laskurow[rahti_etu]'></td><td colspan='2' valign='top' nowrap>".t("Eturahdin ALV").": ".alv_popup('rahti_etu_alv', $laskurow["rahti_etu_alv"])."</td><td class='back'> $lisatiedot </td></tr>";
+
+	// Näytetään pyöriserot vain jos yhtiönparametri jalkilaskenta_kuluperuste == ''
+	if ($yhtiorow['jalkilaskenta_kuluperuste'] == '') {
+		echo "<tr><th valign='top'>".t("Pyöristyserot").":</th><td valign='top'><input type='text' name='rahti_etu' value='$laskurow[pyoristys_erot]'></td><td colspan='2' valign='top' nowrap>".t("Pyöristyserot ALV").": ".alv_popup('pyoristys_erot_alv', $laskurow["pyoristys_erot_alv"])."</td><td class='back'></td></tr>";
+	}
+
 	echo "<tr><th valign='top'>".t("Arvioitu kuluprosentti").":</th><td valign='top' colspan='3'><input type='text' name='rahti' value='$laskurow[rahti]'> n.nn %</td></tr>";
 	echo "<tr><th valign='top'>".t("Kulusumma")." $yhtiorow[valkoodi]:</th><td valign='top' colspan='3'><input type='text' name='rahti_huolinta' value='$laskurow[rahti_huolinta]'> ".t("ohittaa kuluprosentin")."</td></tr>";
 	echo "<tr><th valign='top'>".t("Erikoisalennus").":</th><td valign='top' colspan='3'><input type='text' name='erikoisale_saapuminen' value='$laskurow[erikoisale_saapuminen]'></td></tr>";
