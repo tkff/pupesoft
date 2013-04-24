@@ -27,6 +27,19 @@ if ($tee == "update") {
 		}
 	}
 
+	// Pyöristysero tarkistus
+	if ($llrow['volasku'] > 0 and abs($pyoristys_erot) > abs($llrow['vosumma_valuutassa'])) {
+		echo "<font class='message'>".t("VIRHE: Pyöristysero ei saa olla suurempi kuin laskujen yhteissumma")."!</font><br><br>";
+
+		$tee = "";
+		$toiminto = "lisatiedot";
+
+		if ($nappikeikalla == 'ollaan') {
+			$nappikeikalle = 'menossa';
+			$nappikeikalla = '';
+		}
+	}
+
 	if ((float) $erikoisale_saapuminen < 0 or (float) $erikoisale_saapuminen > 100) {
 		echo "<font class='message'>".t("VIRHE: Erikoisale pitää olla alle 100% ja yli 0%")."!</font><br><br>";
 
@@ -41,7 +54,7 @@ if ($tee == "update") {
 }
 
 if ($tee == "update") {
-	if ($laskurow["erikoisale_saapuminen"] == $erikoisale_saapuminen and $laskurow["rahti_etu"] == $rahti_etu and $laskurow["rahti_etu_alv"] == $rahti_etu_alv) {
+	if ($laskurow["erikoisale_saapuminen"] == $erikoisale_saapuminen and $laskurow["rahti_etu"] == $rahti_etu and $laskurow["rahti_etu_alv"] == $rahti_etu_alv and $laskurow['pyoristys_erot'] == $pyoristys_erot and $laskurow['pyoristys_erot_alv'] == $pyoristys_erot_alv) {
 		$kohdistettu = $laskurow["kohdistettu"];
 	}
 	else {
@@ -298,7 +311,7 @@ if ($tee == "") {
 	}
 
 	if (abs($laskurow['pyoristys_erot']) > abs($llrow['vosumma_valuutassa'])) {
-		$lisatiedot = "<font class='message'>".t("VIRHE: Pyöristysero ei saa olla suurempi kuin laskujen yhteissumma")."!</font><br>";
+		$pyoristusero_lisatiedot .= "<font class='message'>".t("VIRHE: Pyöristysero ei saa olla suurempi kuin laskujen yhteissumma")."!</font><br>";
 	}
 
 	echo "<tr><th valign='top'>".t("Nettopaino").":</th><td valign='top' colspan='3'><input type='text' name='bruttopaino' value='$laskurow[bruttopaino]'></td><td valign='top' class='back' width='450'>$lisamassa</td></tr>";
@@ -306,7 +319,7 @@ if ($tee == "") {
 
 	// Näytetään pyöriserot vain jos yhtiönparametri jalkilaskenta_kuluperuste == ''
 	if ($yhtiorow['jalkilaskenta_kuluperuste'] == '') {
-		echo "<tr><th valign='top'>".t("Pyöristyserot").":</th><td valign='top'><input type='text' name='rahti_etu' value='$laskurow[pyoristys_erot]'></td><td colspan='2' valign='top' nowrap>".t("Pyöristyserot ALV").": ".alv_popup('pyoristys_erot_alv', $laskurow["pyoristys_erot_alv"])."</td><td class='back'></td></tr>";
+		echo "<tr><th valign='top'>".t("Pyöristyserot").":</th><td valign='top'><input type='text' name='pyoristys_erot' value='$laskurow[pyoristys_erot]'></td><td colspan='2' valign='top' nowrap>".t("Pyöristyserot ALV").": ".alv_popup('pyoristys_erot_alv', $laskurow["pyoristys_erot_alv"])."</td><td class='back'>$pyoristusero_lisatiedot</td></tr>";
 	}
 
 	echo "<tr><th valign='top'>".t("Arvioitu kuluprosentti").":</th><td valign='top' colspan='3'><input type='text' name='rahti' value='$laskurow[rahti]'> n.nn %</td></tr>";
