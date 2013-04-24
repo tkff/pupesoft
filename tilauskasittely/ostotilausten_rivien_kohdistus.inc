@@ -1008,15 +1008,20 @@ if ($tila == '') {
 	$query   = "UPDATE lasku set summa='$hintarow[hinta]', kohdistettu='' where yhtio ='$kukarow[yhtio]' and tunnus='$otunnus'";
 	$hinresu = pupe_query($query);
 
-	//Jos käyttäjä on syöttänyt alvillisen hinnan niin lisätään alvi
+	// Jos käyttäjä on syöttänyt alvillisen hinnan niin lisätään alvi
 	if ((int) $laskurow["rahti_etu_alv"] != 0) {
-		$laskurow["rahti_etu"] = round($laskurow["rahti_etu"]*(1+($laskurow["rahti_etu_alv"]/100)), 6);
+		$laskurow["rahti_etu"] = round($laskurow["rahti_etu"] * (1 + ($laskurow["rahti_etu_alv"] / 100)), 6);
+	}
+
+	// Jos käyttäjä on syöttänyt alvillisen pyöristyksen niin lisätään alvi
+	if ((int) $laskurow["pyoristys_erot_alv"] != 0) {
+		$laskurow["pyoristys_erot"] = round($laskurow["pyoristys_erot"] * (1 + ($laskurow["pyoristys_erot_alv"] / 100)), 6);
 	}
 
 	$valittusumma 			= sprintf("%.2f", round($hintarow["hinta"],2));
-	$laskunsumma  			= sprintf("%.2f", round($kulurow["summa"]-$laskurow["rahti_etu"]-$valittusumma-$kulurow['osto_kulut'], 2));
-	$checksumma   			= $kulurow["summa"]-$laskurow["rahti_etu"]-$hintarow["hinta"]-$kulurow['osto_kulut'];
-	$kohdistettava_summa 	= sprintf("%.2f", round($kulurow["summa"] - $laskurow["rahti_etu"] - $kulurow['osto_kulut'], 2));
+	$laskunsumma  			= sprintf("%.2f", round($kulurow["summa"] - $laskurow["rahti_etu"] - $laskurow['pyoristys_erot']- $valittusumma - $kulurow['osto_kulut'], 2));
+	$checksumma   			= $kulurow["summa"] - $laskurow["rahti_etu"] - $laskurow['pyoristys_erot'] - $hintarow["hinta"] - $kulurow['osto_kulut'];
+	$kohdistettava_summa 	= sprintf("%.2f", round($kulurow["summa"] - $laskurow["rahti_etu"] - $laskurow['pyoristys_erot'] - $kulurow['osto_kulut'], 2));
 	$valitutrivit 			= mysql_num_rows($result);
 
 	if ($laskunsumma != 0.00 and $checksumma < 0.01 and $checksumma > -0.01 and $kohdistettava_summa == $valittusumma) {
