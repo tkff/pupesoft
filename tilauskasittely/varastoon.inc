@@ -272,8 +272,7 @@ else {
 		$laskurow['summa'] = $hintarow['summa'];
 
 		// lasketaan itse rahtikulut
-		$rahtikulut = round($laskurow['summa'] * $laskurow['vienti_kurssi'] * ($laskurow['rahti'] / 100), 2);
-		$rahtikulut += round($laskurow['pyoristys_erot'] * $laskurow['vienti_kurssi'], 6);
+		$rahtikulut = round((($laskurow['summa'] + $laskurow['pyoristys_erot']) * $laskurow['vienti_kurssi'] * ($laskurow['rahti'] / 100) + ($laskurow['rahti_etu'] * $laskurow['vienti_kurssi'])), 2);
 		$rahtitapa  = t("Kuluprosentti") ." ". $laskurow['rahti']. "%";
 	}
 }
