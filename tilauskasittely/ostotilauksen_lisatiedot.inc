@@ -319,7 +319,7 @@ if ($tee == "") {
 
 	// Näytetään pyöriserot vain jos yhtiönparametri jalkilaskenta_kuluperuste == ''
 	if ($yhtiorow['jalkilaskenta_kuluperuste'] == '') {
-		echo "<tr><th valign='top'>".t("Pyöristyserot").":</th><td valign='top'><input type='text' name='pyoristys_erot' value='$laskurow[pyoristys_erot]'></td><td colspan='2' valign='top' nowrap>".t("Pyöristyserot ALV").": ".alv_popup('pyoristys_erot_alv', $laskurow["pyoristys_erot_alv"])."</td><td class='back'>$pyoristusero_lisatiedot</td></tr>";
+		echo "<tr><th valign='top'>".t("Pyöristyserot").":</th><td valign='top'><input type='text' id='pyoristys_erot' name='pyoristys_erot' value='$laskurow[pyoristys_erot]'></td><td colspan='2' valign='top' nowrap>".t("Pyöristyserot ALV").": ".alv_popup('pyoristys_erot_alv', $laskurow["pyoristys_erot_alv"])."</td><td class='back'>$pyoristusero_lisatiedot</td></tr>";
 	}
 
 	echo "<tr><th valign='top'>".t("Arvioitu kuluprosentti").":</th><td valign='top' colspan='3'><input type='text' name='rahti' value='$laskurow[rahti]'> n.nn %</td></tr>";
@@ -346,9 +346,23 @@ if ($tee == "") {
 
 	echo "</table>";
 
-
-	echo "<br><input type='submit' value='".t("Päivitä tiedot")."'>";
+	echo "<br><input type='submit' id='paivita' value='".t("Päivitä tiedot")."'>";
 	echo "</form>";
+
+	echo "
+		<script type='text/javascript'>
+
+			// Tarkistetaan onko pyöristyseroja setattu ja varmistetaan
+			// käyttäjältä että tämä on ok.
+			$('#paivita').on('click', function() {
+				var pyoristys_erot = $('#pyoristys_erot');
+
+				if (pyoristys_erot.val() > 0) {
+					return confirm('Olet lisännyt pöyristyseroja, oletko varma?');
+				}
+			});
+
+		</script>";
 }
 
 ?>
