@@ -1331,7 +1331,7 @@ if ($tila == '') {
 		</tr>
 		<tr>
 		<th>".t("Saapumisen erikoisale").":</th><td><span id='keikan_erikoisale'>".($laskurow["erikoisale_saapuminen"]*1)."</span>%</td>
-		<th>".t("Kohdistettava summa").":</th><td style='text-align:right'><span id='kohdistettava_summa'>$kohdistettava_summa</span> $kulurow[valkoodi]</td>
+		<th>".t("Pyöristyserot").":</th><td style='text-align:right'>$laskurow[pyoristys_erot] $kulurow[valkoodi]</td>
 		<th>".t("Näytä kaikki yhdellä sivulla").":</th><td><INPUT type='checkbox' $chk3 name='nayta_kaikki' value='kaikki' onclick='submit()'></td>
 		</tr>
 		<tr>";
@@ -1349,10 +1349,13 @@ if ($tila == '') {
 	}
 
  	echo "<td>{$alku} - {$loppu}  ",t("Sivu"),": {$sivu}</td>";
-
-	echo "<th>".t("Kohdistettu summa (riv/kpl)").":</th><td id='kohdistettu_summa_td' style='text-align:right'>$ok <span id='kohdistettu_summa'>$valittusumma</span> $kulurow[valkoodi] (<span id='kohdistettu_rivit'>$kappaleetrow[rivit]</span>/<span id='kohdistettu_kpl'>".(float) $kappaleetrow['kappaleet']."</span>)$okend</td>
+	echo "<th>".t("Kohdistettava summa").":</th><td style='text-align:right'><span id='kohdistettava_summa'>$kohdistettava_summa</span> $kulurow[valkoodi]</td>
 		<th></th><td></td>
 		</tr>";
+
+	echo "<tr><th></th><td></td>";
+	echo "<th>".t("Kohdistettu summa (riv/kpl)").":</th><td id='kohdistettu_summa_td' style='text-align:right'>$ok <span id='kohdistettu_summa'>$valittusumma</span> $kulurow[valkoodi] (<span id='kohdistettu_rivit'>$kappaleetrow[rivit]</span>/<span id='kohdistettu_kpl'>".(float) $kappaleetrow['kappaleet']."</span>)$okend</td>";
+	echo "<th></th><td></td></tr>";
 
 	echo "<tr>";
 
@@ -1361,11 +1364,11 @@ if ($tila == '') {
 	echo "<th>".t("Jäljellä").":</th><td style='text-align:right'>$ok $laskunsumma $kulurow[valkoodi]$okend</td>";
 
 	echo "<th></th><td></td>";
-	echo "</form>";
 
 	echo "</tr>";
 
 	echo "</table>";
+	echo "</form>";
 
 	// otsikko valmis
 
