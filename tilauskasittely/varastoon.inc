@@ -235,8 +235,7 @@ if ((($toiminto == "kaikkiok" and $tee == "varma") or ($toiminto == "kaikkiok" a
 	and ($yhtiorow["jalkilaskenta_kuluperuste"] == "" or ($yhtiorow["jalkilaskenta_kuluperuste"] == "PX" and $laskurow["saldo_maksettu"] !=0))) {
 
 	// jos lasketaan virallista varastonarvoa, otetaan keikan summa huomioon (kululaskujen yhteenlaskettu summa OLETUSVALUUTASSA on laskurow.saldo_maksettu)
-	$rahtikulut = $laskurow['saldo_maksettu'] + round($laskurow['rahti_etu'] * $laskurow['vienti_kurssi'], 6);
-	$rahtikulut += round($laskurow['pyoristys_erot'] * $laskurow['vienti_kurssi'], 6);
+	$rahtikulut = $laskurow['saldo_maksettu'] + round(($laskurow['rahti_etu'] + $laskurow['pyoristys_erot']) * $laskurow['vienti_kurssi'], 6);
 	$rahtitapa  = t("Virallinen");
 }
 else {
@@ -244,7 +243,7 @@ else {
 
 	// jos ollaan annettu t‰lle batchille kulusumma, k‰ytet‰‰nkin vaan sit‰!
 	if ($laskurow["rahti_huolinta"] != 0) {
-		$rahtikulut = $laskurow["rahti_huolinta"];
+		$rahtikulut = $laskurow["rahti_huolinta"] + (($laskurow['pyoristys_erot'] + $laskurow['rahti_etu']) * $laskurow['vienti_kurssi']);
 		$rahtitapa  = t("Kulusumma");
 	}
 	else {
