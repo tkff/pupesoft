@@ -271,7 +271,11 @@ else {
 		$laskurow['summa'] = $hintarow['summa'];
 
 		// lasketaan itse rahtikulut
-		$rahtikulut = round((($laskurow['summa'] + $laskurow['pyoristys_erot']) * $laskurow['vienti_kurssi'] * ($laskurow['rahti'] / 100) + ($laskurow['rahti_etu'] * $laskurow['vienti_kurssi'])), 2);
+		// Lasketaan kuluprosentti rivien summasta + pyöristyseroista, ja lisätään lopuksi pyöristysero + rahtietu rahtikuluihin mukaan
+		$rahtikulut = ($laskurow['summa'] + $laskurow['pyoristys_erot']) * $laskurow['vienti_kurssi'];
+		$rahtikulut =  $rahtikulut * ($laskurow['rahti'] / 100);
+		$rahtikulut += ($laskurow['rahti_etu'] + $laskurow['pyoristys_erot']) * $laskurow['vienti_kurssi'];
+		$rahtikulut = round($rahtikulut, 6);
 		$rahtitapa  = t("Kuluprosentti") ." ". $laskurow['rahti']. "%";
 	}
 }
@@ -279,6 +283,12 @@ else {
 if ($mobiili_keikka != "yes" and $kauttalaskutus == '' and !$tullaan_automaattikohdistuksesta) {
 	echo "<br>";
 	echo "<font class='message'>".t("Saapuminen")." $laskurow[laskunro] $laskurow[nimi]</font><br>";
+	if ($laskurow['rahti_etu'] <> 0) {
+		echo "<font class='message'>".t("Eturahti").": ". $laskurow['rahti_etu'] * $laskurow['vienti_kurssi'] ." $yhtiorow[valkoodi] </font><br>";
+	}
+	if ($laskurow['pyoristys_erot'] <> 0) {
+		echo "<font class='message'>".t("Pyöristyserot").": ". $laskurow['pyoristys_erot'] * $laskurow['vienti_kurssi'] ." $yhtiorow[valkoodi] </font><br>";
+	}
 	echo "<font class='message'>".t("Rahdin määrä yhteensä").": $rahtikulut $yhtiorow[valkoodi] (".t("Peruste").": $rahtitapa)<br><hr></font>";
 }
 
