@@ -51,6 +51,20 @@ if ($tee == "update") {
 			$nappikeikalla = '';
 		}
 	}
+
+	foreach ($tilauksen_erikoisale as $etil => $eale) {
+		if ((float) $eale < 0 or (float) $eale > 100) {
+			echo "<font class='message'>".t("VIRHE: Erikoisale pitää olla alle 100% ja yli 0%")."! ".t("Tilaus").": $etil</font><br><br>";
+
+			$tee = "";
+			$toiminto = "lisatiedot";
+
+			if ($nappikeikalla == 'ollaan') {
+				$nappikeikalle = 'menossa';
+				$nappikeikalla = '';
+			}
+		}
+	}
 }
 
 if ($tee == "update") {
@@ -71,32 +85,32 @@ if ($tee == "update") {
 	// Hoidetaan pilkut pisteiksi....
 	$rahti_etu 				= str_replace (",", ".", $rahti_etu);
 	$rahti 					= str_replace (",", ".", $rahti);
-	$rahti_huolinta			= str_replace (",", ".", $rahti_huolinta);
+	$rahti_huolinta 		= str_replace (",", ".", $rahti_huolinta);
 	$pyoristys_erot			= str_replace (",", ".", $pyoristys_erot);
 	$pyoristys_erot_alv		= str_replace (",", ".", $pyoristys_erot_alv);
-	$erikoisale_saapuminen	= str_replace (",", ".", $erikoisale_saapuminen);
+	$erikoisale_saapuminen 	= str_replace (",", ".", $erikoisale_saapuminen);
 	$bruttopaino 			= str_replace (",", ".", $bruttopaino);
 
 	$toimaika 		= $vv."-".$kk."-".$pp;
 	$ultilno 		= tarvitaanko_intrastat($maa_lahetys, $maa_maara);
 
 	$query = "	UPDATE lasku
-				SET maa_lahetys			= '$maa_lahetys',
-				maa_maara				= '$maa_maara',
+				SET maa_lahetys 		= '$maa_lahetys',
+				maa_maara 				= '$maa_maara',
 				kauppatapahtuman_luonne = '$ktapahtuman_luonne',
-				kuljetusmuoto			= '$kuljetusmuoto',
-				bruttopaino				= '$bruttopaino',
-				rahti_huolinta			= '$rahti_huolinta',
+				kuljetusmuoto 			= '$kuljetusmuoto',
+				bruttopaino 			= '$bruttopaino',
+				rahti_huolinta 			= '$rahti_huolinta',
 				rahti_etu 				= '$rahti_etu',
-				rahti_etu_alv			= '$rahti_etu_alv',
+				rahti_etu_alv 			= '$rahti_etu_alv',
 				rahti 					= '$rahti',
 				pyoristys_erot			= '$pyoristys_erot',
 				pyoristys_erot_alv		= '$pyoristys_erot_alv',
-				erikoisale_saapuminen	= '$erikoisale_saapuminen',
-				toimaika				= '$toimaika',
-				kohdistettu				= '$kohdistettu',
-				comments				= '$kommentti',
-				ultilno					= '$ultilno'
+				erikoisale_saapuminen 	= '$erikoisale_saapuminen',
+				toimaika 				= '$toimaika',
+				kohdistettu 			= '$kohdistettu',
+				comments	 			= '$kommentti',
+				ultilno 				= '$ultilno'
 				WHERE tunnus = '$otunnus'
 				and yhtio 	 = '$kukarow[yhtio]'";
 	$result = mysql_query($query) or pupe_error($query);
@@ -109,14 +123,26 @@ if ($tee == "update") {
 							AND tyyppi != 'D'";
 	$upd_erikoisale_res = pupe_query($query_erikoisale);
 
+	foreach ($tilauksen_erikoisale as $etil => $eale) {
+		$query_erikoisale = "	UPDATE tilausrivi
+								SET erikoisale = '{$eale}'
+								WHERE yhtio = '{$kukarow['yhtio']}'
+								AND uusiotunnus = '{$otunnus}'
+								AND otunnus = '{$etil}'
+								AND netto  != 'N'
+								AND tyyppi != 'D'";
+		$upd_erikoisale_res = pupe_query($query_erikoisale);
+	}
+
 	$toiminto = "";
 }
 
 if ($tee == "") {
 
-	$query = "SELECT *
-			  FROM lasku
-			  WHERE tunnus = '$otunnus' and yhtio = '$kukarow[yhtio]'";
+	$query = "	SELECT *
+			  	FROM lasku
+			  	WHERE tunnus = '$otunnus'
+				and yhtio = '$kukarow[yhtio]'";
 	$result = mysql_query($query) or pupe_error($query);
 	$laskurow = mysql_fetch_array ($result);
 
@@ -208,7 +234,7 @@ if ($tee == "") {
 	if ($laskurow["maa_maara"] == "") {
 		$query = "	SELECT varastopaikat.maa, count(*) kpl
 					FROM lasku
-					JOIN tilausrivi ON (tilausrivi.yhtio = lasku.yhtio AND tilausrivi.uusiotunnus = lasku.tunnus)
+					JOIN tilausrivi ON (tilausrivi.yhtio = lasku.yhtio AND tilausrivi.uusiotunnus = lasku.tunnus AND tilausrivi.tyyppi != 'D')
 					JOIN varastopaikat ON (varastopaikat.yhtio = lasku.yhtio
 						AND concat(rpad(upper(varastopaikat.alkuhyllyalue),  5, '0'),lpad(upper(varastopaikat.alkuhyllynro),  5, '0')) <= concat(rpad(upper(tilausrivi.hyllyalue), 5, '0'),lpad(upper(tilausrivi.hyllynro), 5, '0'))
 						AND concat(rpad(upper(varastopaikat.loppuhyllyalue), 5, '0'),lpad(upper(varastopaikat.loppuhyllynro), 5, '0')) >= concat(rpad(upper(tilausrivi.hyllyalue), 5, '0'),lpad(upper(tilausrivi.hyllynro), 5, '0')))
@@ -290,7 +316,9 @@ if ($tee == "") {
 		$query  = "	SELECT round(sum(tuotemassa*(varattu+kpl)),2) massa, sum(varattu+kpl) kpl, sum(if(tuotemassa!=0, varattu+kpl, 0)) kplok
 					FROM tilausrivi
 					JOIN tuote ON (tuote.yhtio=tilausrivi.yhtio and tuote.tuoteno=tilausrivi.tuoteno and tuote.ei_saldoa = '')
-					WHERE tilausrivi.yhtio = '$kukarow[yhtio]' and tilausrivi.uusiotunnus = '$laskurow[tunnus]'";
+					WHERE tilausrivi.yhtio = '$kukarow[yhtio]'
+					AND tilausrivi.uusiotunnus = '$laskurow[tunnus]'
+					AND tilausrivi.tyyppi != 'D'";
 		$painoresult = mysql_query($query) or pupe_error($query);
 		$painorow = mysql_fetch_array($painoresult);
 
@@ -318,7 +346,7 @@ if ($tee == "") {
 
 	// Näytetään eturahti vain jos yhtiönparametri jalkilaskenta_kuluperuste == ''
 	if ($yhtiorow['jalkilaskenta_kuluperuste'] == '') {
-		echo "<tr><th valign='top'>".t("Veroton")." ".t("Eturahti").":</th><td valign='top'><input type='text' name='rahti_etu' value='$laskurow[rahti_etu]'></td><td colspan='2' valign='top' nowrap>".t("Eturahdin ALV").": ".alv_popup('rahti_etu_alv', $laskurow["rahti_etu_alv"])."</td><td class='back'> $lisatiedot </td></tr>";
+	echo "<tr><th valign='top'>".t("Veroton")." ".t("Eturahti").":</th><td valign='top'><input type='text' name='rahti_etu' value='$laskurow[rahti_etu]'></td><td colspan='2' valign='top' nowrap>".t("Eturahdin ALV").": ".alv_popup('rahti_etu_alv', $laskurow["rahti_etu_alv"])."</td><td class='back'> $lisatiedot </td></tr>";
 	}
 
 	echo "<tr><th valign='top'>".t("Veroton")." ".t("Pyöristysero").":</th><td valign='top'><input type='text' id='pyoristys_erot' name='pyoristys_erot' value='$laskurow[pyoristys_erot]'></td><td colspan='2' valign='top' nowrap>".t("Pyöristyserot ALV").": ".alv_popup('pyoristys_erot_alv', $laskurow["pyoristys_erot_alv"])."</td><td class='back'>$pyoristusero_lisatiedot</td></tr>";
@@ -344,6 +372,21 @@ if ($tee == "") {
 
 	echo "<tr><th>".t("Kommentti").":</th><td colspan='3'><input type='text' name='kommentti' size='40' value='$laskurow[comments]'></td></tr>";
 
+	echo "<tr><td class='back'><br>".t("Ostotilausten erikoisalennukset").":</td></tr>";
+
+	$query  = "	SELECT otunnus, round(avg(erikoisale), 2) erikoisale
+				FROM tilausrivi
+				WHERE tilausrivi.yhtio = '$kukarow[yhtio]'
+				AND tilausrivi.uusiotunnus = '$laskurow[tunnus]'
+				AND tilausrivi.tyyppi != 'D'
+				GROUP BY 1
+				ORDER BY 1";
+	$painoresult = mysql_query($query) or pupe_error($query);
+
+	while ($painorow = mysql_fetch_array($painoresult)) {
+		echo "<tr><th>".t("Tilaus").": {$painorow['otunnus']}</th><td colspan='3'><input type='text' name='tilauksen_erikoisale[{$painorow['otunnus']}]' size='5' value='{$painorow['erikoisale']}'></td></tr>";
+	}
+
 	echo "</table>";
 
 	echo "<br><input type='submit' id='paivita' value='".t("Päivitä tiedot")."'>";
@@ -364,5 +407,3 @@ if ($tee == "") {
 
 		</script>";
 }
-
-?>
